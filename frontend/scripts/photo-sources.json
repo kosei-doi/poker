@@ -1,0 +1,182 @@
+[
+  {
+    "target": {
+      "kind": "town",
+      "id": "hitachiota"
+    },
+    "commonsTitle": "File:ニホンの竹林IMG 0865.jpg",
+    "crop": "center",
+    "checkedBy": "Claude（実装担当C）"
+  },
+  {
+    "target": {
+      "kind": "town",
+      "id": "takahagi"
+    },
+    "commonsTitle": "File:Nakatsu in Autumn.JPG",
+    "crop": "center",
+    "checkedBy": "Claude（実装担当C）"
+  },
+  {
+    "target": {
+      "kind": "town",
+      "id": "kitaibaraki"
+    },
+    "commonsTitle": "File:Tomiuracho Toyooka, Minamiboso, Chiba Prefecture 299-2402, Japan - panoramio (6).jpg",
+    "crop": "center",
+    "checkedBy": "Claude（実装担当C）"
+  },
+  {
+    "target": {
+      "kind": "town",
+      "id": "hitachiomiya"
+    },
+    "commonsTitle": "File:ヒノキ人工林のある里山P7306340.jpg",
+    "crop": "center",
+    "checkedBy": "Claude（実装担当C）"
+  },
+  {
+    "target": {
+      "kind": "town",
+      "id": "daigo"
+    },
+    "commonsTitle": "File:091025中野白滝（秋） - panoramio.jpg",
+    "crop": "center",
+    "checkedBy": "Claude（実装担当C）"
+  },
+  {
+    "target": {
+      "kind": "spot",
+      "id": "hitachiota-bamboo"
+    },
+    "commonsTitle": "File:Bamboo @ Trail from Yugawara station to Mount Shiro (11166825935).jpg",
+    "crop": "center",
+    "checkedBy": "Claude（実装担当C）"
+  },
+  {
+    "target": {
+      "kind": "spot",
+      "id": "hitachiota-kujiragaoka"
+    },
+    "commonsTitle": "File:有松 - panoramio - gundam2345 (5).jpg",
+    "crop": "center",
+    "checkedBy": "Claude（実装担当C）"
+  },
+  {
+    "target": {
+      "kind": "spot",
+      "id": "hitachiota-soba"
+    },
+    "commonsTitle": "File:三咲のざるそば (54178345476).jpg",
+    "crop": "center",
+    "checkedBy": "Claude（実装担当C）"
+  },
+  {
+    "target": {
+      "kind": "spot",
+      "id": "hitachiota-temple"
+    },
+    "commonsTitle": "File:Honsen-ji Temple Main Gate and Stone Steps(本泉寺山門・石段).jpg",
+    "crop": "center",
+    "checkedBy": "Claude（実装担当C）"
+  },
+  {
+    "target": {
+      "kind": "spot",
+      "id": "takahagi-hananuki"
+    },
+    "commonsTitle": "File:Tabisoko bridge.JPG",
+    "crop": "center",
+    "checkedBy": "Claude（実装担当C）"
+  },
+  {
+    "target": {
+      "kind": "spot",
+      "id": "takahagi-trail"
+    },
+    "commonsTitle": "File:Todoroki Valley - Tokyo, Japan - DSC09464.jpg",
+    "crop": "center",
+    "checkedBy": "Claude（実装担当C）"
+  },
+  {
+    "target": {
+      "kind": "spot",
+      "id": "takahagi-diner"
+    },
+    "commonsTitle": "File:Korroke teishoku of drive-in oasis May 2026.jpg",
+    "crop": "center",
+    "checkedBy": "Claude（実装担当C）"
+  },
+  {
+    "target": {
+      "kind": "spot",
+      "id": "hitachi-oiwa"
+    },
+    "commonsTitle": "File:Izumo Fukutoku Shrine - Mar 27, 2018.jpg",
+    "crop": "center",
+    "checkedBy": "Claude（実装担当C）"
+  },
+  {
+    "target": {
+      "kind": "spot",
+      "id": "hitachi-cafe"
+    },
+    "commonsTitle": "File:Upstairs window in Coast Cafe, Worthing 2026-05-25.jpg",
+    "crop": "center",
+    "checkedBy": "Claude（実装担当C）"
+  },
+  {
+    "target": {
+      "kind": "spot",
+      "id": "kitaibaraki-izura"
+    },
+    "commonsTitle": "File:Bokido of Hotel Urashima02s4s3960.jpg",
+    "crop": "center",
+    "checkedBy": "Claude（実装担当C）"
+  },
+  {
+    "target": {
+      "kind": "spot",
+      "id": "kitaibaraki-anko"
+    },
+    "commonsTitle": "File:Goccojiru.jpg",
+    "crop": "center",
+    "checkedBy": "Claude（実装担当C）"
+  },
+  {
+    "target": {
+      "kind": "spot",
+      "id": "kitaibaraki-onsen"
+    },
+    "commonsTitle": "File:Togo Onsen07bs4592.jpg",
+    "crop": "center",
+    "checkedBy": "Claude（実装担当C）"
+  },
+  {
+    "target": {
+      "kind": "spot",
+      "id": "daigo-fukuroda"
+    },
+    "commonsTitle": "File:Waterfall in forest.jpg",
+    "crop": "center",
+    "checkedBy": "Claude（実装担当C）"
+  },
+  {
+    "target": {
+      "kind": "spot",
+      "id": "daigo-soba"
+    },
+    "commonsTitle": "File:Towari soba by shibainu in Ryogoku, Tokyo.jpg",
+    "crop": "center",
+    "checkedBy": "Claude（実装担当C）"
+  },
+  {
+    "target": {
+      "kind": "spot",
+      "id": "daigo-onsen"
+    },
+    "commonsTitle": "File:コタン温泉露天風呂 - panoramio.jpg",
+    "crop": "center",
+    "checkedBy": "Claude（実装担当C）"
+  }
+]

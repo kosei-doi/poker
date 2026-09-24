@@ -1,0 +1,20 @@
+/* ---- イメージ写真（N5） ---- */
+
+/* 読み込めないときの単色（N5-6）。白いアイコンとのコントラストはどれも 4.5:1 以上 */
+.photo-fallback[data-kind='食べる'] {
+  background: #7c2d12;
+}
+.photo-fallback[data-kind='見る'] {
+  background: #1e3a5f;
+}
+.photo-fallback[data-kind='体験'] {
+  background: #14532d;
+}
+.photo-fallback[data-kind='town'] {
+  background: #334155;
+}
+
+/* 写真に重ねる「イメージ写真」の帯（N5-2） */
+.photo-overlay {
+  background: rgb(0 0 0 / 0.6);
+}

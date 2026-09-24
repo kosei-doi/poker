@@ -1,0 +1,67 @@
+/* 日本全体の地図（N1）まわりの追加スタイル。v1 の地図のスタイルは index.css にある */
+
+/* 日本全体のときだけ、県北6市町をふわっと光らせる */
+.map-japan .town-path {
+  filter: drop-shadow(0 0 3px rgb(251 191 36 / 0.9));
+}
+.pref-path {
+  cursor: pointer;
+}
+
+/* 「対応エリア: 茨城県北」: 基準点（県北の東の海上）から右へ伸びるピル。
+   --dx は地図の端からはみ出さないよう SpotlightMap が入れる */
+.kenpoku-label {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(var(--dx, 0px), -50%);
+  width: max-content;
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 0.25em;
+  align-items: baseline;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--color-glow);
+  background: rgb(253 230 138 / 0.96);
+  color: #1c1300;
+  font-size: 12px;
+  line-height: 1.25;
+  font-weight: 700;
+  box-shadow: 0 0 22px rgb(251 191 36 / 0.55);
+  cursor: pointer;
+}
+.kenpoku-label .kicker {
+  font-weight: 600;
+  font-size: 11px;
+}
+.kenpoku-label:hover {
+  background: #fff7d6;
+}
+@media (max-width: 640px) {
+  /* スマホ幅では2行にして、右の海の中に収める */
+  .kenpoku-label {
+    flex-direction: column;
+    align-items: flex-start;
+    border-radius: 12px;
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+  .kenpoku-label .kicker {
+    font-size: 10px;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .kenpoku-label {
+    animation: kenpoku-glow 2.4s ease-in-out infinite;
+  }
+}
+@keyframes kenpoku-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 14px rgb(251 191 36 / 0.45);
+  }
+  50% {
+    box-shadow: 0 0 28px rgb(251 191 36 / 0.85);
+  }
+}

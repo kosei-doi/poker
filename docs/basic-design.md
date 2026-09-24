@@ -1,8 +1,8 @@
 # 穴場 PoC 基本設計書
 
-> **最終更新**: 2026-09-24（実装に合わせて 4.2〜4.4・7.1・8.2・8.3 を更新） / **オーナー**: 土井
-> **位置づけ**: 暫定（[requirements-poc.md](requirements-poc.md) を実装するための設計。要件が変われば追従する）
-> **スコープ**: `poker` リポジトリ `poc` ブランチの `frontend/`（React + TypeScript + Vite + Tailwind CSS + Leaflet、バックエンドなし）。要件の内容はここでは繰り返さず、要件定義書の ID（D1-1、B3、5章、7.4 など）で参照する。
+> **最終更新**: 2026-09-24（v2: 13章を追加。N1〜N5 と B1 の変更、3人での並列実装の分担。レビューを受けて 13.7・13.11 などを更新） / **オーナー**: 土井
+> **位置づけ**: 暫定（[requirements-poc.md](requirements-poc.md) v2 を実装するための設計。要件が変われば追従する）
+> **スコープ**: `poker` リポジトリ `poc` ブランチの `frontend/`（React + TypeScript + Vite + Tailwind CSS + Leaflet、バックエンドなし）。0〜12章は v1（D1〜D5・B1〜B5）の設計で、実装済み。v2 の追加分（N1〜N5、B1 の変更）は **13章** にまとめ、v1 の章と食い違うところは13章を優先する。要件の内容はここでは繰り返さず、要件定義書の ID（D1-1、N3-2、5章、7.4 など）で参照する。
 
 ---
 
@@ -25,6 +25,8 @@
 | 11 | 「町が持つタグ」の意味 | 雰囲気・有名地の一致度・似ている理由の判定は、すべて `summaries[townId].tags`（D5-2 の3〜5個）で行う。声のどれか1件にあるだけのタグは数えない（地図ラベルに出ているタグと判定を一致させるため） |
 
 ## 1. 全体構成
+
+> v2 でルーティング・ヘッダー・4ページ・日本全体の地図・写真が加わった全体図は 13.1。
 
 ```mermaid
 flowchart LR
@@ -84,6 +86,8 @@ flowchart LR
 - 町の一言とタグ（D5）は AI の出力なので state に保存し、声を確定したときに作り直す（D5-3）
 
 ## 2. ディレクトリとファイル構成
+
+> v2 で追加・変更するファイルと、その担当は 13.2。
 
 `frontend/` 直下（雛形として足りないものも含む。★は同梱済み）。
 
@@ -511,6 +515,8 @@ type VoiceModalState =
 
 ### 7.1 レイアウト
 
+> v2 ではヘッダーが全ページ共通になり（13.6）、チャットの入力欄の位置が変わる（B1、13.10）。
+
 | 幅 | 構成 |
 | --- | --- |
 | PC（≥ 1024px） | 左に操作パネル（幅 420px、縦スクロール）、右に地図（残り全部・全高） |
@@ -764,6 +770,8 @@ export function buildNarrowingTimeline(
 
 ## 11. 実装順（要件10章に沿う）
 
+> v1 の実装順。v2 の実装順と3人の分担は 13.12。
+
 各段階の終わりに `npm run build` と `npm test` を通してコミットする（push はしない）。
 
 | 順 | 作るもの | ファイル | 終わりの確認 |
@@ -782,3 +790,589 @@ export function buildNarrowingTimeline(
 
 - 往復交通費・所要時間は目安。舞台が決まったら実際の経路で作り直す（要件12章）
 - 境界データは 2025-01-01 版。市町村合併があれば `scripts/build-boundaries.sh` の URL とコードを更新する
+
+---
+
+## 13. v2 の追加設計（N1〜N5・B1 の変更）
+
+v1（0〜12章）の動きは変えない。v2 で変える v1 の部分は、この章で名指しする。
+
+### 13.0 v2 で決めたこと
+
+| # | 論点 | 決定 |
+| --- | --- | --- |
+| 12 | ルーティング | ライブラリは使わず自前（`lib/route.ts` の純関数＋`useRoute` フック）。ハッシュは `#/search`・`#/dashboard`・`#/report`・`#/about`。町を指定して開くときはクエリ `?town=<TownId>` を付ける（`#/search?town=hitachiota`、`#/report?town=takahagi`）。依存を増やさず、4ページ・1パラメータなら数十行で足りるため |
+| 13 | ページをまたぐ状態 | `AppStateProvider` をルーターより上に置き、会話・条件・提案・選んだ町・自分の声・気になる町はページを移っても残す。ページのコンポーネントだけを切り替える |
+| 14 | 自分の声の印（要件8章） | 別の印は作らず、`Voice.source === 'user'` を印とする。利用者の声は v1 から `anaba-poc/v1/userVoices` に保存しているので、そのまま使う（初期の声は `source: 'seed'`） |
+| 15 | 気になる町の保存 | `anaba-poc/v1/favorites` に `TownId[]`（押した順）。読み込み時に `TOWNS` にない id を捨てる |
+| 16 | 地図の表示範囲 | `AppState.mapView: 'japan' \| 'kenpoku'`。最初は `'japan'`。町を選ぶ（`SELECT_TOWN`）と reducer が必ず `'kenpoku'` にする |
+| 17 | 都道府県境界 | 国土数値情報 N03（2025-01-01 版）全国データの「都道府県単位」ファイルを mapshaper で軽量化し、`data/prefectures.json`（**実測 148KB、gzip 38KB**）として同梱。市町村境界と同じ出典なので、出典表示は1つで済む（13.7） |
+| 18 | 県北でのズーム中の都道府県 | 県北を表示しているあいだは都道府県レイヤーを消す（簡略化した県境の粗さが、細かい市町村境界の横で目立つため）。v1 の見た目がそのまま残る |
+| 19 | ズームと絞り込みの時刻 | 相談を送ったとき日本全体を表示中なら、`interpret` とズーム（1.2秒）を同時に始め、**ズームが終わった時刻を D1-3 の時刻表の起点 t0** にする（13.7.4） |
+| 20 | 写真の入手元 | 主に Wikimedia Commons（API でライセンスを機械的に確かめられるため）。使ってよいライセンスは CC0・パブリックドメイン・CC BY（2.0/3.0/4.0）と、Unsplash License・Pexels License。CC BY-SA・NC・ND・GFDL は使わない（13.11） |
+| 21 | 写真の形式 | WebP、横 1200px・3:2 に切り抜き、1枚 150KB 以下（目標 120KB）。`src/assets/photos/` に置き、Vite にハッシュ付きで同梱する |
+| 22 | 町向けレポート | v1 のモーダル（`ReportModal`）はやめ、`#/report` のページにする。町の詳細の「町向けレポートを開く」は `#/report?town=<id>` へ移る（N4-1） |
+| 23 | 並列実装 | 担当A（N2・N3・N4・B1）、担当B（N1）、担当C（N5）。共有ファイルは持ち主を1人に決め、ほかの担当は持ち主が用意する部品や状態を使うだけにする（13.12） |
+
+### 13.1 全体構成（v2）
+
+```mermaid
+flowchart TB
+  subgraph Shell["App（ルーター）"]
+    Header["Header<br/>N2-1・N2-3・B5"]
+    Route["useRoute<br/>#/search・#/dashboard・#/report・#/about<br/>?town=…"]
+  end
+  subgraph Pages["pages/"]
+    Search["SearchPage<br/>D1〜D5・B1〜B4・N1"]
+    Dash["DashboardPage<br/>N3"]
+    Report["ReportPage<br/>N4-1・D3-1"]
+    About["AboutPage<br/>N4-2・N5-5"]
+  end
+  subgraph SearchParts["さがす の中身（v1 ＋ v2）"]
+    Map["SpotlightMap<br/>日本全体 ⇄ 県北（N1）"]
+    Chat["ChatPanel<br/>入力欄を下に固定（B1）"]
+    Cards["TownCard / TownPanel<br/>気になる（N3-3）・写真（N5）"]
+  end
+  subgraph State["state/（Provider はルーターより上）"]
+    Store["AppState<br/>＋ mapView・prefNotice・favorites"]
+    Flow["useConsultFlow<br/>ズーム完了を待って演出（N1-2）"]
+    MapEv["mapEvents<br/>ズーム完了の通知"]
+  end
+  subgraph Data["data/"]
+    Pref["prefectures.json<br/>都道府県 148KB"]
+    Geo["boundaries.json<br/>県北6市町"]
+    Photos["photos.ts ＋ photo-credits.json<br/>assets/photos/*.webp"]
+  end
+  LS[("localStorage<br/>userVoices・favorites")]
+
+  Route --> Pages
+  Header --> Route
+  Search --> SearchParts
+  Map --> Pref
+  Map --> Geo
+  Map --> MapEv
+  Flow --> MapEv
+  Chat --> Flow
+  Cards --> Photos
+  Dash --> Photos
+  About --> Photos
+  Pages --> Store
+  SearchParts --> Store
+  Store <--> LS
+```
+
+- ページを切り替えても `AppState` は消えない（決定#13）。「さがす」を離れているあいだも、進行中の絞り込みの timer は動き続け、戻ると結果が出ている
+- 「さがす」に戻ると `SpotlightMap` は作り直される。作り直した直後の1回は、今の `mapView`・`selectedTownId`・`lit` をアニメーションなしで反映する（13.7.5）
+
+### 13.2 ディレクトリとファイル（追加・変更と担当）
+
+担当の分け方は 13.12。**★ = 新規、◆ = v1 のファイルを変更**。
+
+```
+frontend/
+├── package.json                    ◆ C: devDependencies に sharp、scripts に "photos"
+├── scripts/
+│   ├── build-prefectures.sh        ★ B: 都道府県境界を作る（13.7.1）
+│   ├── fetch-photos.mjs            ★ C: 写真の取得・検証・WebP 変換・出典の書き出し（13.11.3）
+│   └── photo-sources.json          ★ C: 使う写真の一覧（対象 → Commons のファイル名 など）
+└── src/
+    ├── App.tsx                     ◆ A: ルーター（Header ＋ ページの切り替え）
+    ├── index.css                   ◆ A: ヘッダーとページ共通のスタイルだけ（B・C は自分の CSS ファイルを持つ）
+    ├── pages/                      ★ A
+    │   ├── SearchPage.tsx          ★ A: v1 の App.tsx の Layout を移す。?town= の反映
+    │   ├── DashboardPage.tsx       ★ A: N3
+    │   ├── ReportPage.tsx          ★ A: N4-1
+    │   └── AboutPage.tsx           ★ A: N4-2
+    ├── lib/
+    │   ├── route.ts / route.test.ts        ★ A: ハッシュの解析と組み立て
+    │   ├── dashboard.ts / dashboard.test.ts ★ A: N3 の一覧・数字を作る純関数
+    │   ├── japan.ts / japan.test.ts        ★ B: 日本全体の範囲・ズーム時間・都道府県の型と照合
+    │   └── storage.ts / storage.test.ts    ◆ A: favorites の読み書きを追加
+    ├── state/
+    │   ├── reducer.ts / reducer.test.ts    ◆ A: mapView・prefNotice・favorites と Action を追加（B の分も A が入れる）
+    │   ├── AppStateProvider.tsx            ◆ A: favorites の読み込み・保存
+    │   ├── useReset.ts                     ◆ A: favorites も消す
+    │   ├── useRoute.ts                     ★ A: 今のルートと navigate
+    │   ├── mapEvents.ts                    ★ B: 「県北へのズームが終わった」の通知
+    │   └── useConsultFlow.ts               ◆ B: ズーム完了を待ってから時刻表を始める
+    ├── data/
+    │   ├── prefectures.json        ★ B
+    │   ├── attributions.ts         ★ B: 境界データの出典の文言（地図と「穴場度とは」で共用）
+    │   ├── photos.ts               ★ C: 写真の取得関数と型
+    │   ├── photo-credits.json      ★ C: 出典の記録（N5-5）
+    │   └── photos.test.ts          ★ C
+    ├── assets/photos/*.webp        ★ C: 23枚（町6・スポット17）
+    └── components/
+        ├── Header.tsx              ◆ A: ナビゲーション（N2）
+        ├── nav/NavLinks.tsx        ★ A
+        ├── nav/MobileMenu.tsx      ★ A
+        ├── chat/ChatPanel.tsx      ◆ A: B1 の変更
+        ├── common/FavoriteButton.tsx ★ A: N3-3
+        ├── recommend/TownCard.tsx  ◆ A: 気になるボタン＋ C の <TownPhoto> を置く
+        ├── town/TownPanel.tsx      ◆ A: 気になるボタン、レポートへのリンク、C の <TownPhoto>・<SpotPhoto> を置く
+        ├── town/DayPlan.tsx        ◆ C: 各行に <SpotPhoto size="thumb">
+        ├── report/ReportModal.tsx  ◆ A: 削除し、中身を ReportView.tsx に移す
+        ├── report/ReportView.tsx   ★ A
+        ├── report/TownSelect.tsx   ★ A
+        ├── dashboard/*.tsx         ★ A: SummaryStats・MyVoiceList・VisitedTownList・FavoriteTownList・EmptyGuide
+        ├── about/*.tsx             ★ A: ConceptSection・FormulaSection・CorrectionChart・DataSources
+        ├── map/SpotlightMap.tsx    ◆ B: 日本全体の表示、県北へのズーム、準備中の表示、「日本全体を見る」
+        ├── map/japanLayer.ts       ★ B: 都道府県レイヤーの生成とスタイル
+        ├── map/map.css             ★ B: 地図まわりの追加スタイル（index.css には書かない）
+        └── photo/                  ★ C
+            ├── Photo.tsx           ★ C: 写真＋「イメージ写真」表示＋読み込めないときの代わり
+            ├── TownPhoto.tsx / SpotPhoto.tsx ★ C
+            ├── PhotoCredits.tsx    ★ C: 出典の一覧（N5-5。A が AboutPage に置く）
+            ├── PhotoListNote.tsx   ★ C: サムネイル一覧に添える「イメージ写真」の1行（N5-2）
+            └── photo.css           ★ C
+```
+
+- `types.ts` は v2 では**変更しない**。新しい型はそれぞれの持ち主のモジュールに置く（ルート → `lib/route.ts`、都道府県 → `lib/japan.ts`、写真 → `data/photos.ts`）
+- `vite.config.ts`・`data/towns.ts`・`data/spots.ts`・`data/voices.ts`・`data/seed.test.ts` は v2 では変更しない（写真は `photos.ts` 側で townId / spotId に結びつける）
+
+### 13.3 型定義（追加）
+
+```ts
+// lib/route.ts（A）
+export type Page = 'search' | 'dashboard' | 'report' | 'about';
+export type Route =
+  | { page: 'search'; town: TownId | null }
+  | { page: 'dashboard' }
+  | { page: 'report'; town: TownId | null }
+  | { page: 'about' };
+
+// state/reducer.ts（A。B が使うものも含む）
+export type MapView = 'japan' | 'kenpoku';
+interface AppState {
+  // …v1 の項目…
+  mapView: MapView;                 // N1。初期値 'japan'
+  prefNotice: string | null;        // N1-3。押した都道府県の名前（例: '栃木県'）。null で非表示
+  favorites: TownId[];              // N3-3。押した順。localStorage に保存
+}
+type Action =
+  // …v1 の Action…
+  | { type: 'SET_MAP_VIEW'; view: MapView }     // 'japan' にすると selectedTownId・noVoiceTownId・prefNotice を消す
+  | { type: 'SHOW_PREF_NOTICE'; name: string | null }
+  | { type: 'TOGGLE_FAVORITE'; townId: TownId };
+// 既存の SELECT_TOWN は、townId が null でなければ mapView も 'kenpoku' にする（決定#16）
+
+// lib/japan.ts（B）
+export interface PrefectureProps { code: string; name: string }   // code は '01'〜'47'、name は '茨城県'
+export type Prefectures = FeatureCollection<Polygon | MultiPolygon, PrefectureProps>;
+export const JAPAN_VIEW_BOUNDS: [[number, number], [number, number]] = [[26.0, 127.5], [45.6, 146.0]]; // 沖縄本島〜北海道
+export const KENPOKU_ZOOM_MS = 1200;   // N1-2 の「1.5秒以内」
+export const JAPAN_MIN_ZOOM = 4;       // 日本全体のときの minZoom。375×406px の地図で JAPAN_VIEW_BOUNDS が収まるズームは約 4.46、PC（860×744）は約 5.37（実測の計算）。小さいほうに合わせる
+export const KENPOKU_MIN_ZOOM = 8;     // 県北のときの minZoom（v1 の値）
+export const MAX_ZOOM = 15;            // v1 の値。どちらの表示でも同じ
+export const KENPOKU_PREF_CODE = '08';
+
+// data/photos.ts（C）
+export type PhotoTarget = { kind: 'town'; id: TownId } | { kind: 'spot'; id: SpotId };
+export interface PhotoCredit {
+  id: string;                 // 'spot-hitachiota-bamboo' のように kind-id
+  target: PhotoTarget;
+  file: string;               // 'spot-hitachiota-bamboo.webp'
+  width: number;              // 変換後（≤ 1200）
+  height: number;
+  bytes: number;              // 変換後（≤ 150KB）
+  title: string;              // 入手元での題名
+  author: string;             // 撮影者（HTML を除いた文字列）
+  authorUrl: string | null;
+  sourceUrl: string;          // 入手元のページ（Commons のファイルページなど）
+  license: 'CC0' | 'Public domain' | 'CC BY 2.0' | 'CC BY 3.0' | 'CC BY 4.0' | 'Unsplash License' | 'Pexels License';
+  licenseUrl: string;
+  changes: string;            // 'リサイズ・切り抜き・WebP に変換'（CC BY の「変更の表示」）
+  retrievedAt: string;        // '2026-09-24'
+}
+export interface PhotoRef { src: string; alt: string; credit: PhotoCredit }
+export function getTownPhoto(townId: TownId): PhotoRef | null;
+export function getSpotPhoto(spotId: SpotId): PhotoRef | null;
+```
+
+### 13.4 状態管理の変更（A）
+
+| 項目 | 内容 |
+| --- | --- |
+| Provider の位置 | `main.tsx` → `App`（`AppStateProvider` の中にルーター）。ページを移っても state は残る（決定#13） |
+| 自分の声 | v1 のまま `userVoices`（`anaba-poc/v1/userVoices`）。ダッシュボードは `userVoices` だけを使い、初期の声は含めない（N3-1） |
+| 気になる町 | `favorites` を `anaba-poc/v1/favorites` に保存。`lib/storage.ts` に `loadFavorites(townIds)`・`saveFavorites`・`clearFavorites` を足す（読み込みで重複と未知の id を捨てる。保存できない環境でも動く） |
+| 保存のタイミング | `userVoices` と同じく、`favorites` が変わったとき `useEffect` で保存（初回の読み込み直後は保存しない） |
+| リセット（B5） | `useReset`: 進行中のタスクを止める → `clearUserVoices()`・`clearFavorites()` → `RESET`。`RESET` は `mapView: 'japan'`・`favorites: []`・`prefNotice: null` を含む初期状態に戻す。**今いるページは変えない**（ダッシュボードで押せば「何もないとき」の表示になる） |
+| mapView | 初期 `'japan'`。`SET_MAP_VIEW`・`SELECT_TOWN`（null 以外で `'kenpoku'`）・`RESET` で変わる。地図（B）はこれを読んでズームする |
+| prefNotice | 日本全体で茨城県北以外を押したとき（B が dispatch）。`SET_MAP_VIEW`・`SELECT_TOWN`・`RESET` で消す |
+
+### 13.5 ルーティング（A）
+
+- `lib/route.ts`（純関数。テストする）
+  - `parseHash(hash: string): Route` … `''`・`'#'`・`'#/'`・未知のページは `{ page: 'search', town: null }`。`?town=` は `TOWNS` にある id だけ採る（ないものは null）。`search` と `report` 以外に付いた `?town=` は無視
+  - `toHash(route: Route): string` … `{ page: 'search', town: null }` → `'#/search'`、town ありは `'#/search?town=hitachiota'`
+- `state/useRoute.ts`
+  - `useRoute(): Route` … `useSyncExternalStore` で `hashchange` と独自イベント `anaba:route` を購読
+  - `navigate(route, { replace = false })` … `replace` なら `history.replaceState(null, '', toHash(route))` のあと `anaba:route` を発火（`replaceState` は `hashchange` を出さないため）。そうでなければ `location.hash = toHash(route)`
+  - 起動時にハッシュが正規形でなければ（空・未知・不正な town）`navigate(parse した結果, { replace: true })` で直す。再読み込みで同じページが開く（N2-2）
+- リンクは `<a href={toHash(route)}>`（新しいタブで開ける・キーボードで押せる）
+- **「さがす」で町を開く**（N3-1・N3-3 の一覧、`#/search?town=X` の直打ち）
+  - `SearchPage` で `route.town` が変わったら、声のある町なら `SELECT_TOWN(X)`（→ mapView は `'kenpoku'`、地図はズーム）、声のない町なら `SET_MAP_VIEW('kenpoku')` と `SHOW_NO_VOICE(X)`
+  - 逆向き: `state.selectedTownId` が変わったら `navigate({ page: 'search', town: selectedTownId }, { replace: true })`。戻るボタンの履歴を町の選択で埋めないため `replace`
+  - ループを防ぐため、どちらも「今の値と違うときだけ」行う
+- **「レポート」で町を開く**（N4-1）: `TownPanel` の「町向けレポートを開く」は `navigate({ page: 'report', town })`。`ReportPage` で町を選び直したら `replace` で `?town=` を更新
+- ページを移ったらスクロールを先頭に戻し、`document.title` を「穴場 — さがす」などに変える
+
+### 13.6 ヘッダーとスマホのメニュー（A、N2）
+
+| 幅 | 構成 |
+| --- | --- |
+| PC（≥ 768px） | 左: ロゴ「穴場」（`#/search` へのリンク）＋「サンプルデータ」バッジ。中央: 4つのリンク（さがす／ダッシュボード／町向けレポート／穴場度とは）。右端: リセット |
+| スマホ（< 768px） | 左: ロゴ。右: リセット（アイコンのみ＋`aria-label`）とメニューボタン（`Menu` アイコン、`aria-expanded`・`aria-controls`）。高さは1行（`h-14`）のまま。「サンプルデータ」バッジはメニューの中に移す |
+
+- 今いるページのリンクに `aria-current="page"` と強調（琥珀色の下線＋文字色）。判定は `useRoute().page`
+- スマホのメニュー（`MobileMenu`）: ヘッダー直下に全幅で開くパネル。リンクを押す・`Escape`・外側を押す・ページが変わると閉じる。開いたら最初のリンクにフォーカス、閉じたらメニューボタンにフォーカスを戻す
+- ヘッダーは全ページ共通で、`App` の一番上に `sticky top-0 z-[1500]` で置く（モーダル z-[2000] より下、地図の Leaflet コントロールより上）
+- `ReportModal` 削除に合わせ、v1 の `Header.tsx` の中身（タイトル・リセット）はこのヘッダーに統合する
+- v1 の `App.tsx` の操作パネルの下にある注意書き（「感想・費用・所要時間はサンプル（架空または目安）です。境界データは…」）は、`SearchPage` の操作パネルの下にそのまま残す（B1 の変更後は、スクロールする会話の欄の末尾）。出典は地図の右下の出典表示（B）と「穴場度とは」（A）にも出る
+
+### 13.7 日本全体の地図（B、N1）
+
+#### 13.7.1 都道府県境界データ
+
+**2026-09-24 に取得と軽量化を試し、成功した。** B は同じ手順を `scripts/build-prefectures.sh` にし、出力を同梱する。
+
+| 手順 | 内容 | 結果 |
+| --- | --- | --- |
+| 入手元 | 国土数値情報「行政区域」N03 2025-01-01 版の全国データ `https://nlftp.mlit.go.jp/ksj/gml/data/N03/N03-2025/N03-20250101_GML.zip`（632MB） | zip の中に都道府県単位のファイル `N03-20250101_prefecture.shp`（178MB、121,990 図形）がある。これだけを取り出す |
+| ライセンス | 国土数値情報ダウンロードサイトの利用規約に従い、出典を明記すれば加工・再配布できる（市町村境界と同じ。8.2）。確認方法: データセットのページ（N03）の「使用許諾条件」欄と利用規約のページを見て、変更がないかを実装時に確かめる | 出典の文言は市町村と共通: 「出典：「国土数値情報（行政区域データ）」（国土交通省）を加工して作成」 |
+| 統合 | `-each 'code=N03_007.slice(0,2)' -dissolve code copy-fields=N03_001 -rename-fields name=N03_001` | 47図形 |
+| 小島の除去 | `-filter-islands min-area=15km2` | 日本全体の縮尺で見えない島を落とす |
+| 簡略化 | `-simplify 0.1% keep-shapes -filter-islands min-vertices=4 -o precision=0.001 format=geojson` | **148KB（gzip 38KB）**。目標は 200KB 以下（`japan.test.ts` で確認） |
+
+```sh
+# scripts/build-prefectures.sh の中身（要点）
+unzip -o "$WORK/all.zip" 'N03-20250101_prefecture.*' -d "$WORK"
+npx -y mapshaper@0.6 -i "$WORK/N03-20250101_prefecture.shp" encoding=utf8 \
+  -each 'code=N03_007.slice(0,2)' -dissolve code copy-fields=N03_001 -rename-fields name=N03_001 \
+  -filter-islands min-area=15km2 \
+  -simplify 0.1% keep-shapes -filter-islands min-vertices=4 \
+  -o precision=0.001 format=geojson src/data/prefectures.json
+```
+
+- 実測では 0.3% で 614KB、0.15% で 214KB だったため 0.1% にした。日本全体の縮尺（375px 幅で全国が収まる程度）で県境の形は十分に分かる
+- 取得できないときの代替: v1 の 8.2 と同じく、N03 を加工済みで公開している GitHub のデータ（例: `smartnews-smri/japan-topography`、`dataofjapan/land`）から都道府県単位のものを使い、同じ簡略化をかける。ライセンスと元データを README で確かめ、出典を併記する
+- `data/attributions.ts`（B）に出典の文言を定数で置き、地図の出典表示と「穴場度とは」（A）の両方で使う
+
+#### 13.7.2 表示（mapView = 'japan'）
+
+- レイヤーの重なり（下から）: 都道府県（`japanLayer`）→ 県北6市町（v1 の `boundaries.json`）→ ラベル
+- スタイル
+
+| 対象 | fill | fillOpacity | stroke |
+| --- | --- | --- | --- |
+| 都道府県（茨城県を含む） | `#1e293b` | 0.55 | `#3b4660` 0.8px |
+| 県北6市町（声のない常陸大宮市も含む） | `#fbbf24` | 0.85 | `#fde68a` 1px |
+
+- 表示範囲: `fitBounds(JAPAN_VIEW_BOUNDS, { padding: [12, 12] })`。小笠原などの離島は範囲外でよい
+- ラベル「対応エリア: 茨城県北」: 県北の東側（経度 141.2、緯度 36.7）に `L.divIcon` の琥珀色のピル。県北とは細い線（`L.polyline`）でつなぐ。押すと県北へズーム（キーボードでも押せる `button`）
+- 県北6市町は日本全体の縮尺でも押せる（押すと県北へズーム。町は選ばない）。都道府県のパスには `tabindex` を付けない（47個のタブ移動を避ける。県北へのズームはラベルのボタンでキーボードから行える）
+- v1 のスポットライト（`lit`・`dimmed`）のスタイルは、日本全体では当てない。県北に切り替えたときに当てる
+- v1 の町名ラベル（6市町）と光った町のラベルは、日本全体では出さない（この縮尺では1か所に重なるため）。日本全体のラベルは「対応エリア: 茨城県北」だけにする。v1 の `keepLabelsInside` も県北表示のときだけ動かす
+
+#### 13.7.3 対応していない地域（N1-3）
+
+- 都道府県のパスを押すと `SHOW_PREF_NOTICE(name)`。茨城県の県北以外（水戸・つくばなど）も茨城県のパスなので同じ扱い
+- 表示は v1 の `NoVoiceNotice` と同じ位置・見た目の地図上のカード:「{name}：この地域はまだ準備中です」。閉じるボタン付き。4秒後か、ほかの場所を押すと消える
+- 提案（`recommend`）には `TOWNS` の町しか入らないので、ロジックの変更はない
+
+#### 13.7.4 県北へのズームと絞り込み演出のつなぎ方（N1-2）
+
+```mermaid
+sequenceDiagram
+  participant U as 利用者
+  participant F as useConsultFlow（B）
+  participant S as AppState
+  participant M as SpotlightMap（B）
+  participant E as mapEvents（B）
+  U->>F: send(相談文)（送信 = s0）
+  F->>S: START_CONSULT
+  alt mapView が 'japan'
+    F->>S: SET_MAP_VIEW('kenpoku')
+    S-->>M: mapView の変化
+    M->>M: flyToBounds(県北, 1.2秒)
+    F->>F: interpret を同時に開始
+    M->>E: moveend で notifyKenpokuReady()
+    E-->>F: waitKenpokuReady() が解決（= t0）
+  else すでに 'kenpoku'
+    F->>F: t0 = s0
+  end
+  F->>F: await Promise.all([interpret, sleep(500 − (now − t0))])
+  F->>S: 以降は v1 の 8.4 の時刻表（t0 起点）
+```
+
+- `state/mapEvents.ts`（B）: `waitKenpokuReady(signal): Promise<void>`・`notifyKenpokuReady()`・`setKenpokuZooming(boolean)`。地図は県北へのズームを始めるときに `setKenpokuZooming(true)`、その `moveend` で `false` にしてから `notifyKenpokuReady()` を呼ぶ
+  - 即解決するのは「地図がマウントされていない」か「`mapView` が `'kenpoku'` で、かつ県北へのズームの途中でない」ときだけ（県北のラベルを押してズームしている最中に送った相談は、ズームの完了を待つ）
+  - 通知に使う `moveend` は、県北へのズームで起きたものだけ（`setKenpokuZooming(true)` のあとの最初の `moveend`）。利用者のドラッグやスポットへのズームでは通知しない
+  - 3秒たっても通知がなければ解決する（地図の不具合で相談が止まらないように）
+- 時刻表（`buildNarrowingTimeline`）は変えない。起点 t0 をズーム完了の時刻にするだけ。送信からの合計は最大 1.2 + 3.5 = 4.7秒で、D1-3 の「4秒」はズームを除いて満たす
+- `interpret` はズームと同時に始める（Claude API に替えたとき、待ち時間をズームで隠せる）
+- 例文ボタン・入力欄のどちらから送っても同じ
+- 町を選んで県北に移るとき（`SELECT_TOWN`）は、v1 の 8.3 のとおりスポットの範囲へ直接 `flyToBounds`（日本全体から一気に。1.2秒）
+
+#### 13.7.5 県北の表示への切り替えと「日本全体を見る」（N1-2・N1-4）
+
+- `mapView` が `'kenpoku'` になったら: `flyToBounds(県北の範囲, { duration: 1.2 })`（町を選んでいればスポットの範囲）→ `moveend` で都道府県レイヤーを外し（決定#18）、市町村に v1 のスタイル（初期／暗い／光る）を当て、`notifyKenpokuReady()`
+- `mapView` が `'japan'` になったら: 都道府県レイヤーを戻し、市町村を 13.7.2 のスタイルに戻して `flyToBounds(JAPAN_VIEW_BOUNDS, { duration: 1.2 })`
+- 「日本全体を見る」: 県北表示のとき、地図の右上（ズームボタンの反対側）に置くボタン。押すと `SET_MAP_VIEW('japan')`。会話・条件・提案カードは消さない（パネルはそのまま。カードを押せば県北へ戻ってその町を選ぶ）
+- 動きを減らす設定: `flyToBounds` の代わりに `fitBounds(…, { animate: false })`、レイヤーの切り替えも即時
+- **ズームの下限と移動できる範囲を `mapView` に合わせて切り替える。** v1 は `L.map(…, { minZoom: 8, maxZoom: 15 })` と `setMaxBounds(県北の範囲.pad(0.6))` で固定していたので、そのままでは日本全体まで引けない
+  - 地図を作るときは `minZoom: JAPAN_MIN_ZOOM`（4）・`maxZoom: MAX_ZOOM` で作り、`setMaxBounds` は付けない（最初は日本全体のため）
+  - 日本全体の範囲: `minZoom` = `JAPAN_MIN_ZOOM`、`maxBounds` = `JAPAN_VIEW_BOUNDS` を `pad(0.3)` したもの
+  - 県北の範囲: `minZoom` = `KENPOKU_MIN_ZOOM`（8）、`maxBounds` = v1 と同じ（県北の範囲を `pad(0.6)`）
+  - **切り替える順番**（順番を間違えると、ズームの途中で範囲の外へ押し戻される）
+    - 日本全体へ移るとき: **先に** `map.setMinZoom(JAPAN_MIN_ZOOM)`・`map.setMaxBounds(日本全体の範囲)` でゆるめてから `flyToBounds(JAPAN_VIEW_BOUNDS)`
+    - 県北へ移るとき: `flyToBounds(県北の範囲)` の `moveend` の**あとで** `map.setMinZoom(KENPOKU_MIN_ZOOM)`・`map.setMaxBounds(県北の範囲)` で締める
+  - 動きを減らす設定（アニメーションなし）でも同じ順番にする
+- 地図を作り直した直後（ページを戻ってきたとき）は、今の `mapView` の範囲へアニメーションなしで合わせる
+
+### 13.8 ダッシュボード・町向けレポート・穴場度とは（A）
+
+#### 13.8.1 ダッシュボード（`#/dashboard`、N3）
+
+`lib/dashboard.ts`（純関数。テストする）:
+
+```ts
+export interface MyVoiceRow { voice: Voice; town: Town; spot: Spot; excerpt: string } // excerpt は先頭 40字＋「…」
+export interface VisitedTownRow { town: Town; myCount: number; hole: number | null }  // hole は今の町の穴場度
+export function buildMyVoices(userVoices: Voice[]): MyVoiceRow[];                     // createdAt の新しい順
+export function buildVisitedTowns(userVoices: Voice[], stats: StatsIndex): VisitedTownRow[]; // 書いた件数の多い順 → 最後に書いた順
+export function buildSummary(userVoices: Voice[], favorites: TownId[]): { voices: number; towns: number; favorites: number };
+```
+
+画面（上から）:
+
+| 部品 | 内容 | 要件 |
+| --- | --- | --- |
+| `SummaryStats` | 3つの数字（書いた声・行った町・気になる町）を横並び。点数・順位・称号は出さない | N3-4 |
+| `EmptyGuide` | 声も気になる町も0のとき、ほかの部品の代わりに1行:「まだ記録がありません。『さがす』で町を選び、感想を書くか『気になる』を押すとここに並びます」＋「さがす」へのリンク | N3-5 |
+| `MyVoiceList` | 「あなたの声」。行ごとに スポットの写真（C の `<SpotPhoto size="thumb">`）・町名・スポット名・感想の冒頭・満足度・知っていたか・タグ・日時。行全体が `#/search?town=<町>` へのリンク | N3-1・N5-1 |
+| `VisitedTownList` | 「行った町」。町の写真（`<TownPhoto size="thumb">`）・町名・書いた件数・今の穴場度（`ScoreBadge`）。押すと「さがす」でその町 | N3-2 |
+| `FavoriteTownList` | 「気になる町」。町の写真・町名・一言・穴場度・「さがすで開く」リンク・「気になる」を外すボタン | N3-3 |
+
+- 片方だけ0件のときは、その一覧に「まだありません」と1行出す（`EmptyGuide` は両方0のときだけ）
+- スマホは1列、PC は最大幅 960px の中で「あなたの声」を左、「行った町」「気になる町」を右の2列
+
+#### 13.8.2 気になるボタン（N3-3）
+
+- `FavoriteButton({ townId })`: `Heart` アイコン＋「気になる」。押されている間は塗りつぶし＋「気になる（登録済み）」、`aria-pressed`。押すと `TOGGLE_FAVORITE`
+- 置き場所: `TownCard`（カード右上。押してもカードの「町を開く」が動かないよう `stopPropagation`）と `TownPanel`（町名の横）
+
+#### 13.8.3 町向けレポートのページ（`#/report`、N4-1）
+
+- `TownSelect`: `<select>`。声のある5町を並べ、常陸大宮市は「常陸大宮市（まだ声がありません）」で `disabled`。選ぶと `navigate({ page: 'report', town }, { replace: true })`
+- `ReportView({ townId })`: v1 の `ReportModal` の中身（① 良い点の上位3・② 不満・③ 発信文の案）をそのまま移す。町が変わるたびに `tasks.start('report')` で前の待ちを止め、1.5秒待って `ai.buildReport`（6章の待ち時間）
+- 町が未選択のときは「レポートを見たい町を選んでください」だけを出す
+- `#/report?town=hitachiomiya` のように声のない町を直接開いたときは、`TownSelect` を未選択にし、「常陸大宮市はまだ声が集まっていません」と出す（レポートは作らない）
+- 町の写真（`<TownPhoto>`）を見出しの横に置く（N5-1 の対象外だが、C の部品を使うだけなので置く）
+- 「さがすでこの町を見る」リンク（`#/search?town=…`）を下に置く
+
+#### 13.8.4 穴場度とは（`#/about`、N4-2・N5-5）
+
+| 部品 | 内容 |
+| --- | --- |
+| `ConceptSection` | 2章のコンセプトを3行で。「穴場度 = 満足度 − 知名度」を大きく |
+| `FormulaSection` | 5章の式を、デモのスポット（西山の竹林の小径）の今の値で具体的に計算して見せる（`lib/stats.ts` の関数を呼ぶ。声を足した後なら件数も値も変わる）。満足度と知名度を2本の横棒で並べ、その差が穴場度であることを図で示す |
+| `CorrectionChart` | 件数による補正（ベイズ平均）の図。「満足度5の声だけが n 件あるスポット」の補正後の満足度を n = 1, 2, 3, 5, 10, 20 で計算し、全体の平均へ寄る様子を SVG の折れ線（点＋線、軸ラベル付き）で出す。5件未満は「参考値」になることも書く |
+| （ラベル表） | 穴場ラベルのしきい値（3以上・2以上・1以上）と、候補から外す条件（満足度3.5未満・穴場度1未満） |
+| `DataSources` | 「データについて」: 感想・費用・所要時間がサンプルであること（7章）、境界データの出典（`data/attributions.ts`）、写真の出典一覧（C の `<PhotoCredits/>`） |
+
+- グラフは依存を増やさずインライン SVG で描く。色は既存の琥珀色（値）とグレー（全体の平均の線）。数値は `lib/stats.ts` から計算し、ページに固定の数字を書かない
+
+### 13.9 気になる町・自分の声の保存とリセット（A）
+
+- 13.4 のとおり。`storage.test.ts` に favorites の読み書き（壊れた JSON、未知の id、重複、例外）を足す
+- リセット後に `localStorage` の `userVoices` と `favorites` が空（または無い）ことを、11章の確認手順に加える
+
+### 13.10 B1 の変更（A）
+
+v1 の `ChatPanel` と `App` の Layout（→ `SearchPage`）を次のように変える。
+
+| 項目 | v1 | v2 |
+| --- | --- | --- |
+| 入力欄の位置 | 会話の下に続けて置いていた | **パネルの一番下に固定**。パネルを「スクロールする会話の欄」と「固定の入力欄」の2段に分ける |
+| やりとりの積み方 | 上から下 | 上から下に積み、新しい発言・条件タグ・理由・提案カードが出るたびに会話の欄を一番下までスクロールする（利用者が上へスクロールしている間は動かさない: 下端から 80px 以内にいるときだけ追従） |
+| 例文ボタン | 常に表示 | **まだ何も送っていないとき（`messages.length === 0`）だけ**、入力欄のすぐ上に出す。押したら入力欄を経由せずにそのまま `send(例文)` し、例文ボタンは消える（入力欄は空のまま） |
+| 送信後 | 入力欄を空にしていた | 同じ（空にする）。IME 変換中の Enter では送らない（v1 のまま） |
+
+- 会話の欄の中身（上から）: 案内（未送信時のみ）→ 会話 → 条件タグ → 絞り込みの理由 → 提案カード／0件のヒント
+- 町を選んで `TownPanel` を表示している間は、入力欄の段を隠す（町のパネルに集中させる。「戻る」で戻る）
+- スマホ（375px）: 地図（50vh）の下にパネル。入力欄の段はパネルの下端（= 画面の下端）に `sticky bottom-0` で固定し、iOS のホームバーぶん `padding-bottom: env(safe-area-inset-bottom)` を足す
+- PC: パネル（幅 420px）の中で同じ2段構成。ヘッダーの下からパネルの高さいっぱいを使う
+
+### 13.11 イメージ写真（C、N5）
+
+#### 13.11.1 入手元とライセンスの確認方法
+
+- **主な入手元: Wikimedia Commons。** API（`action=query&generator=search&prop=imageinfo&iiprop=url|size|extmetadata`）でライセンス（`LicenseShortName`）・撮影者（`Artist`）・ファイルページ（`descriptionurl`）を機械的に取れる。2026-09-24 の試行では、「bamboo grove path」「soba noodles」「waterfall autumn japan」でそれぞれ 10〜12件が「CC0／パブリックドメイン／CC BY かつ幅 1200px 以上」だった。あんこう鍋・茨城の海岸などは0件だったので、言い換え（「monkfish」「nabe」「hot pot」「rocky shore」「sea cliff japan」など）を用意する
+- Unsplash・Pexels は API キーが要るので、使うときは人がページから選び、ページの URL・撮影者・ライセンスを `photo-sources.json` に手で書く（スクリプトはダウンロードとライセンス名の記録だけ行う）
+- 使ってよいライセンス（許可リスト）: `CC0`、`Public domain`、`CC BY 2.0/3.0/4.0`、`Unsplash License`、`Pexels License`。**CC BY-SA・NC・ND・GFDL・「fair use」は使わない**（切り抜き・変換が改変にあたり、継承などの条件がアプリ全体に及ぶおそれがあるため）
+- 「Public domain」は、国を限らないもの（`Public domain`、`PD-self`、`PD-author` など）だけにする。`PD-US`・`PD-US-expired`・`PD-Japan` のように国を限ったものは外す（スクリプトで `LicenseShortName` と `License` の値を見て判定し、該当すれば止める）
+- 1枚ごとに次を確かめ、`photo-sources.json` の `checkedBy` に確認者を書く
+
+| 確認 | 方法 |
+| --- | --- |
+| ライセンス | API の `LicenseShortName` が許可リストにあること（スクリプトで自動）＋ファイルページを開いてライセンスの表示と一致すること（人） |
+| AI 生成でない | Commons のカテゴリに「AI-generated images」系がない、説明に生成 AI の記載がない（スクリプトでカテゴリを確認＋人） |
+| 人物の顔が分からない | 写真を見て確かめる（人）。人が小さく写る程度で顔が判別できなければ可 |
+| 内容が合っている | 13.11.2 の表の「写すもの」と合っていること（人） |
+| 実在の特定の場所に見えない | 看板・店名・有名な建物（例: 嵐山の竹林の看板）が分からないものを選ぶ。題名に有名地の名前がある写真はなるべく避ける（「イメージ写真」と表示しても、別の有名地と取り違えられないように） |
+
+#### 13.11.2 写真の一覧（23枚）
+
+`photo-sources.json` の対象と、探すときの言葉（英語で検索する）。
+
+| 対象 | 写すもの | 検索語の例 |
+| --- | --- | --- |
+| 町: 常陸太田市 | 竹林と小道 | bamboo grove path |
+| 町: 高萩市 | 紅葉の渓谷 | gorge autumn leaves japan |
+| 町: 日立市 | 海を見下ろす丘の町 | coastal town hill sea view japan |
+| 町: 北茨城市 | 夕焼けの海岸 | sunset rocky coast japan |
+| 町: 常陸大宮市 | 里山の田園 | satoyama rural landscape japan |
+| 町: 大子町 | 紅葉の滝 | waterfall autumn japan |
+| 常陸太田: 竹林の小径 | 竹林の中の細い道 | bamboo forest trail |
+| 常陸太田: 坂の町並み | 古い建物の並ぶ坂道 | old townscape slope japan |
+| 常陸太田: そばの店 | ざるそば | zaru soba |
+| 常陸太田: 古刹 | 石段と山門 | temple stone steps forest japan |
+| 高萩: 渓谷 | 吊り橋と渓流 | suspension bridge gorge japan |
+| 高萩: 遊歩道 | 川沿いの遊歩道 | riverside forest trail japan |
+| 高萩: 食堂 | 和定食 | japanese set meal teishoku |
+| 日立: 神社 | 森の中の参道 | shrine approach forest japan |
+| 日立: 公園の高台 | 高台から見る街と海 | hilltop view city sea japan |
+| 日立: カフェ | 窓際の席と海 | cafe window sea view |
+| 日立: 駅舎 | ガラス越しの海 | glass building sea view |
+| 北茨城: 海岸 | 岩場と入り江 | rocky shore cove japan |
+| 北茨城: あんこう料理 | 鍋料理・海鮮 | monkfish hot pot / nabe / seafood japan |
+| 北茨城: 温泉 | 人のいない露天風呂 | outdoor hot spring empty japan |
+| 大子: 滝 | 段になった滝 | tiered waterfall japan |
+| 大子: そば店 | そば | soba noodles |
+| 大子: 温泉 | 山あいの温泉 | mountain onsen japan |
+
+- 同じ写真を2か所に使わない（町とスポットでも別の写真）
+
+#### 13.11.3 取得と変換（`scripts/fetch-photos.mjs`）
+
+1. `photo-sources.json` を読む。各行は `{ target, commonsTitle | manual: { url, imageUrl, author, license, licenseUrl }, crop?: 'center' | 'top' | 'bottom', checkedBy }`
+2. Commons の行は API でメタデータを取り直し、`LicenseShortName` が許可リストにない・カテゴリに AI 生成がある場合は**止める**（取り違え防止のため、スクリプトでも二重に確かめる）
+3. 幅 1600px のサムネイル URL（`iiurlwidth=1600`）をダウンロードし、`sharp` で `resize(1200, 800, { fit: 'cover', position: crop })` → `webp({ quality: 72 })`。150KB を超えたら quality を 64 → 56 と下げてやり直し、56 でも超えたら止める。EXIF などのメタデータは付けない
+4. `src/assets/photos/<id>.webp` に書き、`src/data/photo-credits.json` に 13.3 の `PhotoCredit` を書く（撮影者は HTML を取り除く。`retrievedAt` は実行日）
+5. 実行: `npm run photos`（`package.json` の scripts に `"photos": "node scripts/fetch-photos.mjs"`）。通常は同梱済みの結果を使うので、アプリの起動には不要
+
+- 目安: 23枚 × 平均 100KB ≈ 2.3MB。ビルド後の `dist/` にハッシュ付きで入る（`import.meta.glob('../assets/photos/*.webp', { eager: true, query: '?url', import: 'default' })` で URL を得る）
+- `sharp` は `devDependencies` に入れる（アプリの実行時には使わない）
+
+#### 13.11.4 表示の部品（`components/photo/`）
+
+```ts
+interface PhotoProps {
+  photo: PhotoRef | null;
+  fallbackKind: SpotKind | 'town';     // 読み込めないときの色とアイコン
+  size: 'hero' | 'card' | 'thumb';     // hero: 幅いっぱい 3:2、card: 幅いっぱい 16:9、thumb: 56×56 の正方形
+  caption?: 'overlay' | 'below' | 'none'; // 省略時: hero・card は 'overlay'、thumb は 'none'（一覧の側で PhotoListNote を出す）
+  className?: string;
+}
+export function PhotoListNote(): ReactElement; // 「写真はイメージ写真（実際の場所ではありません）」の1行（text-xs、muted）
+```
+
+- `<figure>` の中に `<img src alt loading="lazy" decoding="async" width height>`。箱は `aspect-ratio` で先に大きさを決め、読み込み前後でレイアウトがずれないようにする
+- **「イメージ写真（実際の場所ではありません）」**（N5-2。スマホでも全文が見えること。`title` 属性やホバーには頼らない）
+  - `Photo` に `caption: 'overlay' | 'below' | 'none'` を持たせる
+  - `hero`・`card` は `caption: 'overlay'`: 写真の左下に半透明の帯で全文を重ねる（`text-[10px]`、帯の背景 `rgb(0 0 0 / 0.6)`、文字色は白）
+  - `thumb`（56×56）は全文が入らないので `caption: 'none'` にし、**サムネイルが並ぶ一覧の側で、一覧の見出しのすぐ下に「写真はイメージ写真（実際の場所ではありません）」を1行出す**。部品 `PhotoListNote`（C）を用意し、次の3か所に置く
+    - 1日プラン（`DayPlan`、C が置く）: 見出し「1日プラン」の下
+    - 町のパネルのスポット一覧（`TownPanel`、A が置く）: 見出し「スポット」の下
+    - ダッシュボード（A が置く）: 「あなたの声」「行った町」「気になる町」それぞれの見出しの下（その一覧が0件なら出さない）
+  - サムネイルを一覧でなく単独で出す場所を作るときは `caption: 'below'`（写真のすぐ下に全文を折り返して出す）を使う
+  - `PhotoCredits` の見本の写真も同じく、表の見出しの下に1行を出す
+- **読み込めないとき**（`onError`、または `photo === null`）: 同じ大きさの箱を単色で塗り、中央にアイコンを置く。文字色とのコントラストは 4.5:1 以上（N5-6）
+
+| 種類 | 色 | アイコン（lucide） |
+| --- | --- | --- |
+| 食べる | `#7c2d12` | `UtensilsCrossed` |
+| 見る | `#1e3a5f` | `Mountain` |
+| 体験 | `#14532d` | `Sparkles` |
+| 町 | `#334155` | `MapPin` |
+
+- `alt`: 「{スポット名}のイメージ写真」「{町名}のイメージ写真」
+- `TownPhoto({ townId, size })`・`SpotPhoto({ spotId, size })` は `getTownPhoto` / `getSpotPhoto` を呼んで `Photo` に渡すだけの薄い部品。A はこれだけを使う
+- `PhotoCredits`: 表（写真の小さい見本・対象・題名・撮影者・ライセンス（リンク）・入手元（リンク）・変更内容）。スマホでは行ごとのカード表示
+- 置き場所（N5-1）: 提案カード（`card`、カードの上端）、町の詳細（`hero`、町名の上）、スポットの詳細＝町のパネルのスポット一覧の各行（`thumb`）、1日プランの各行（`thumb`）、ダッシュボードの各行（`thumb`）
+
+### 13.12 実装順と3人の分担
+
+#### 13.12.1 分担
+
+| 担当 | 範囲 | 主なファイル（13.2 の A・B・C） |
+| --- | --- | --- |
+| **担当A** | N2（ナビゲーション・ルーティング）、N3（ダッシュボード・気になる町）、N4（町向けレポートのページ・穴場度とは）、B1 の変更、状態と保存の変更 | `App.tsx`、`pages/*`、`Header.tsx`、`nav/*`、`dashboard/*`、`about/*`、`report/*`、`ChatPanel.tsx`、`TownCard.tsx`、`TownPanel.tsx`、`FavoriteButton.tsx`、`lib/route.ts`、`lib/dashboard.ts`、`lib/storage.ts`、`state/reducer.ts`・`AppStateProvider.tsx`・`useReset.ts`・`useRoute.ts`、`index.css`、`README.md` |
+| **担当B** | N1（日本全体の地図） | `map/*`（`SpotlightMap.tsx`・`japanLayer.ts`・`map.css`・`labels.ts`）、`state/useConsultFlow.ts`、`state/mapEvents.ts`、`lib/japan.ts`、`data/prefectures.json`、`data/attributions.ts`、`scripts/build-prefectures.sh` |
+| **担当C** | N5（イメージ写真） | `photo/*`、`data/photos.ts`、`data/photo-credits.json`、`assets/photos/*`、`town/DayPlan.tsx`、`scripts/fetch-photos.mjs`、`scripts/photo-sources.json`、`package.json`・`package-lock.json` |
+
+#### 13.12.2 共有するファイルと持ち主
+
+2人以上が関わるファイルは、持ち主だけが編集する。ほかの担当は、持ち主が用意する状態・部品・定数を使う。
+
+| ファイル | 持ち主 | ほかの担当との約束 |
+| --- | --- | --- |
+| `state/reducer.ts`（＋`reducer.test.ts`） | A | B の分（`mapView`・`prefNotice`・`SET_MAP_VIEW`・`SHOW_PREF_NOTICE`・`SELECT_TOWN` で `'kenpoku'`）も 13.3・13.4 のとおり A が入れる。B は dispatch と読み取りだけ |
+| `state/AppStateProvider.tsx`・`useReset.ts`・`lib/storage.ts` | A | B・C は触らない |
+| `state/useConsultFlow.ts` | B | A は `send` を呼ぶだけ（B1 の変更は `ChatPanel` 側で完結させる） |
+| `components/map/*` | B | A は `SearchPage` に `<SpotlightMap />` を置くだけ |
+| `recommend/TownCard.tsx`・`town/TownPanel.tsx` | A | C の `<TownPhoto>`・`<SpotPhoto>`・`<PhotoListNote>` を 13.11.4 の置き場所に A が置く。C は触らない |
+| `town/DayPlan.tsx` | C | A は触らない |
+| `pages/AboutPage.tsx` | A | C の `<PhotoCredits />` と B の `data/attributions.ts` を A が読み込んで置く |
+| `index.css` | A | B は `map/map.css`、C は `photo/photo.css` を自分のコンポーネントから import する。`index.css` には書かない |
+| `package.json`・`package-lock.json` | C | A・B は依存を足さない（足す必要が出たら C に頼む） |
+| `README.md` | A | B・C は、自分の範囲の使い方（データの作り直し方など）を A に渡し、A が書く |
+| `types.ts`・`vite.config.ts`・`data/towns.ts`・`data/spots.ts`・`data/voices.ts`・`data/seed.test.ts` | （変更しない） | 変える必要が出たら、3人で合意してから A が変える |
+| `basic-design.md` | 土井 | 実装で設計と違う判断をしたら、各担当が土井に伝える |
+
+#### 13.12.3 進め方
+
+各担当は `poc` から自分の作業ブランチ（`poc-a`・`poc-b`・`poc-c`）を切り、自分の worktree で作業して、終わった順に `poc` へ取り込む（`git rebase poc` → fast-forward）。ファイルが重ならないので、衝突は起きない想定。
+
+1. **先行コミット（並列に入る前に、この2つを先に `poc` に入れる）**
+   - **A-0**（A）: `reducer.ts` に 13.3 の状態と Action を追加（テスト込み）、`lib/route.ts`・`useRoute.ts`、`App.tsx` をルーターにして `pages/SearchPage.tsx` へ v1 の Layout を移す（見た目は v1 のまま）、4ページの空の骨組み。`ReportModal` はこの時点では残す
+   - **C-0**（C）: `data/photos.ts` の型と関数（写真0枚なので常に null）、`photo/Photo.tsx`・`TownPhoto`・`SpotPhoto`・`PhotoListNote`・`PhotoCredits`（代わりの表示だけで動く）
+   - B は A-0 が入ってから始める（`mapView` を使うため）。A は C-0 が入ってから写真を置く
+2. **並列に作る**（各担当の中の順番）
+
+| 順 | 担当A | 担当B | 担当C |
+| --- | --- | --- | --- |
+| 1 | N2: ヘッダー・スマホのメニュー・今いるページの強調 | 都道府県境界を作る（`build-prefectures.sh`・`prefectures.json`・`japan.test.ts`） | 写真を選ぶ（`photo-sources.json`。13.11.1 の確認を1枚ずつ） |
+| 2 | B1 の変更（入力欄の固定・例文ボタン） | 日本全体の表示（13.7.2）と準備中（13.7.3） | `fetch-photos.mjs` で取得・変換、`photo-credits.json`、`photos.test.ts` |
+| 3 | 気になる町（保存・ボタン）、`#/search?town=` の反映 | 県北へのズームと「日本全体を見る」（13.7.5） | `Photo` の見た目（イメージ表示・代わりの表示）、`DayPlan` に写真 |
+| 4 | ダッシュボード（`lib/dashboard.ts` とテスト、画面） | 相談の送信とズームのつなぎ（`mapEvents`・`useConsultFlow`、13.7.4） | — |
+| 5 | 町向けレポートのページ（`ReportModal` を削除） | 動きを減らす設定・地図の作り直し時の反映 | — |
+| 6 | 穴場度とは（C・B の部品を置く）、`TownCard`・`TownPanel`・ダッシュボードに写真を置く | — | — |
+| 7 | README に v2 の使い方とデモの手順 | — | — |
+
+3. **結合の確認**（3人とも取り込んだあと、A が行う）: `npm test`・`npm run build` が通る。PC と 375px で、3章のデモの流れ（日本全体 → 相談 → 県北へズーム → 絞り込み → 町 → 感想 → レポートのページ）、ダッシュボード、穴場度とは、リセットを通す。通信を切っても写真・地図が出る。次も確かめる
+   - 日本全体の表示で全国が収まっている（375px・PC とも。ズームの下限で関東だけにならない）。「日本全体を見る」→ 県北 → 日本全体を2往復しても、範囲の外へ押し戻されない
+   - **375px で「イメージ写真（実際の場所ではありません）」の全文が、提案カード・町の詳細（写真に重ねた帯）と、スポット一覧・1日プラン・ダッシュボード（一覧の見出しの下の1行）で読める**
+
+### 13.13 テストの追加方針（Vitest）
+
+v1 の 10章に加える。画面のテストは引き続き書かず、純関数とデータを対象にする。
+
+| ファイル | 担当 | テストすること |
+| --- | --- | --- |
+| `lib/route.test.ts` | A | `parseHash`: 4ページ、空・`#`・`#/`・未知 → search、`?town=` の有効・無効・search/report 以外での無視。`toHash` との往復（parse(toHash(r)) = r） |
+| `lib/dashboard.test.ts` | A | 自分の声だけ（seed を混ぜても除外）・新しい順・冒頭40字と「…」、行った町の件数と今の穴場度、まとめの数字、0件 |
+| `state/reducer.test.ts`（追加） | A | `TOGGLE_FAVORITE`（付ける・外す・順番）、`SELECT_TOWN` で `mapView` が `'kenpoku'`、`SET_MAP_VIEW('japan')` で選択と通知が消える、`RESET` で `favorites: []`・`mapView: 'japan'` |
+| `lib/storage.test.ts`（追加） | A | favorites の保存・読み込み・壊れた値・未知の id・重複・例外 |
+| `lib/japan.test.ts` | B | `prefectures.json` が 47件でコード `01`〜`47` が重複なし、ファイルが 200KB 以下、県北6市町のラベル位置が茨城県（`08`）の図形の中、`JAPAN_VIEW_BOUNDS` が本州・北海道・九州・沖縄本島を含む、`KENPOKU_ZOOM_MS` ≤ 1500、定数の関係（`JAPAN_MIN_ZOOM` < `KENPOKU_MIN_ZOOM` < `MAX_ZOOM`）、375×406px と 860×744px の地図で `JAPAN_VIEW_BOUNDS` が収まるズーム（`lib/geo.ts` の `fitZoom` で計算）が `JAPAN_MIN_ZOOM` 以上 |
+| `state/mapEvents.test.ts` | B | `waitKenpokuReady` が通知で解決する・県北でズーム中でなければ即解決・ズーム中なら通知まで待つ・3秒で解決する・abort で止まる（fake timers） |
+| `data/photos.test.ts` | C | 町6・スポット17のすべてに写真と出典がある、ファイルが実在する、1枚 150KB 以下、WebP のヘッダーから読んだ幅が 1200 以下で `width`/`height` と一致、ライセンスが許可リスト、撮影者・入手元 URL が空でない、同じファイル・同じ入手元を2回使っていない |
+
+- 既存の 126件はすべて通ったままにする（`seed.test.ts` は変更しない）
+
+### 13.14 v2 の未決事項
+
+- 写真は見た目の雰囲気を伝えるためのサンプル。舞台が決まり、自治体や観光協会の写真を使えるようになったら差し替える
+- 都道府県境界は日本全体の縮尺用に強く簡略化している。県北以外の地域に対応するときは、その地域の市町村境界（N03）を v1 の 8.2 と同じ手順で足す

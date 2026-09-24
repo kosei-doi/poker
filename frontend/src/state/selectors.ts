@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
 import type { DataSnapshot } from '../ai/types';
-import { SPOTS } from '../data/spots';
 import { TOWNS } from '../data/towns';
 import { SEED_VOICES } from '../data/voices';
 import { buildCandidateView } from '../lib/candidate';
+import { allSpots } from '../lib/partner';
 import { computeAllStats } from '../lib/stats';
 import type { CandidateView, TownId } from '../types';
 import { useApp } from './context';
@@ -13,8 +13,10 @@ export function useSnapshot(): DataSnapshot {
   const { state } = useApp();
   return useMemo(() => {
     const voices = [...SEED_VOICES, ...state.userVoices];
-    return { towns: TOWNS, spots: SPOTS, voices, stats: computeAllStats(TOWNS, SPOTS, voices), summaries: state.summaries };
-  }, [state.userVoices, state.summaries]);
+    // 町が投稿したスポットも合流させる（その声も点数と町のタグに入る。設計 13.15.4）
+    const spots = allSpots(state.postedSpots);
+    return { towns: TOWNS, spots, voices, stats: computeAllStats(TOWNS, spots, voices), summaries: state.summaries };
+  }, [state.userVoices, state.summaries, state.postedSpots]);
 }
 
 /** 提案カードの中身（設計 決定#10）。顔ぶれと並びは相談時のまま、中身は今のデータから */

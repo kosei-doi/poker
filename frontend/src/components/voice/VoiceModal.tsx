@@ -1,7 +1,7 @@
 import { Loader2, TriangleAlert } from 'lucide-react';
 import { useState } from 'react';
 import { DEMO_VOICE } from '../../data/examples';
-import { spotById } from '../../data/spots';
+import { findSpot } from '../../lib/partner';
 import { townById } from '../../data/towns';
 import { KNOWN_LABEL, score } from '../../lib/format';
 import { splitSentences } from '../../lib/text';
@@ -244,7 +244,7 @@ export function VoiceModal() {
   const actions = useVoiceFlow();
   const m = state.voiceModal;
   if (!m) return null;
-  const spot = spotById(m.spotId);
+  const spot = findSpot(m.spotId, state.postedSpots);
   const town = spot && townById(spot.townId);
   if (!spot || !town) return null;
   return (

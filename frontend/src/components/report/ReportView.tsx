@@ -6,21 +6,18 @@ import { voicesOfTown } from '../../lib/candidate';
 import { isAbortError, sleep } from '../../lib/sleep';
 import { useApp } from '../../state/context';
 import { useSnapshot } from '../../state/selectors';
-import type { TownReport } from '../../types';
-import { Modal } from '../common/Modal';
+import type { TownId, TownReport } from '../../types';
 import { TagChip } from '../common/TagChip';
 
 export const REPORT_WAIT_MS = 1500;
 
-/** 町向けレポート（D3-1） */
-export function ReportModal() {
-  const { state, dispatch, tasks } = useApp();
+/** 町向けレポート（D3-1）。町が変わるたびに前の待ちを止め、1.5秒待って作る（6章の待ち時間） */
+export function ReportView({ townId }: { townId: TownId }) {
+  const { tasks } = useApp();
   const snap = useSnapshot();
-  const townId = state.reportTownId;
   const [report, setReport] = useState<TownReport | null>(null);
 
   useEffect(() => {
-    if (!townId) return;
     const town = townById(townId);
     if (!town) return;
     setReport(null);
@@ -33,13 +30,12 @@ export function ReportModal() {
         if (!isAbortError(e)) throw e;
       });
     return () => tasks.abort('report');
-    // 開いた時点の声で作る
-  }, [townId, tasks]);
+    // 開いた時点（町を選んだ時点）の声で作る
+  }, [townId, tasks]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!townId) return null;
   const town = townById(townId)!;
   return (
-    <Modal title={`町向けレポート: ${town.name}`} onClose={() => dispatch({ type: 'CLOSE_REPORT' })}>
+    <div aria-live="polite">
       {!report ? (
         <div className="flex flex-col items-center gap-3 py-10 text-muted" role="status">
           <Loader2 className="animate-spin text-glow" size={28} aria-hidden />
@@ -94,6 +90,6 @@ export function ReportModal() {
           </section>
         </div>
       )}
-    </Modal>
+    </div>
   );
 }

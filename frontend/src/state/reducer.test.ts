@@ -17,7 +17,6 @@ describe('reducer', () => {
     s = reducer(s, { type: 'ADD_VOICE', voice: voice('hitachiota-bamboo', 5, 'unknown', ['竹']) });
     s = reducer(s, { type: 'START_CONSULT', message: msg('こんにちは') });
     s = reducer(s, { type: 'SELECT_TOWN', townId: 'hitachiota' });
-    s = reducer(s, { type: 'OPEN_REPORT', townId: 'hitachiota' });
     expect(reducer(s, { type: 'RESET' })).toEqual(createInitialState());
   });
 
@@ -86,5 +85,32 @@ describe('reducer', () => {
     s = reducer(s, { type: 'RESET' });
     expect(s.favorites).toEqual([]);
     expect(s.mapView).toBe('japan');
+  });
+
+  describe('町が投稿したスポット（N6）', () => {
+    const posted = {
+      id: 'posted-x1', townId: 'hitachiota', name: '新しい茶屋', kind: '食べる' as const, description: '説明',
+      lat: 36.53, lng: 140.51, order: 0, stayMin: 30, moveMin: 0, costYen: 500, posted: true as const,
+      photoSpotId: 'hitachiota-soba', createdAt: '2026-09-24T10:00:00.000Z',
+    };
+    it('POST_SPOT で増え、同じ id は重複させない', () => {
+      let s = reducer(createInitialState(), { type: 'POST_SPOT', spot: posted });
+      s = reducer(s, { type: 'POST_SPOT', spot: posted });
+      expect(s.postedSpots).toEqual([posted]);
+    });
+    it('REMOVE_POSTED_SPOT でそのスポットに書かれた声も消え、町のタグを作り直す', () => {
+      let s = reducer(createInitialState(), { type: 'POST_SPOT', spot: posted });
+      const v1 = voice('posted-x1', 5, 'unknown', ['温泉'], { source: 'user' });
+      const v2 = voice('hitachiota-bamboo', 5, 'unknown', ['竹'], { source: 'user' });
+      s = reducer(s, { type: 'ADD_VOICE', voice: v1 });
+      s = reducer(s, { type: 'ADD_VOICE', voice: v2 });
+      s = reducer(s, { type: 'REMOVE_POSTED_SPOT', spotId: 'posted-x1' });
+      expect(s.postedSpots).toEqual([]);
+      expect(s.userVoices).toEqual([v2]);
+    });
+    it('RESET で消える', () => {
+      const s = reducer(createInitialState([], [], [posted]), { type: 'RESET' });
+      expect(s.postedSpots).toEqual([]);
+    });
   });
 });

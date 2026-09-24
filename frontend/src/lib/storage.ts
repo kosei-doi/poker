@@ -1,7 +1,9 @@
 import { TAGS, type SpotId, type TownId, type Voice } from '../types';
+import { isValidPostedSpot, type PostedSpot } from './partner';
 
 export const USER_VOICES_KEY = 'anaba-poc/v1/userVoices';
 export const FAVORITES_KEY = 'anaba-poc/v1/favorites';
+export const POSTED_SPOTS_KEY = 'anaba-poc/v1/postedSpots';
 
 function getStorage(): Storage | null {
   try {
@@ -103,6 +105,46 @@ export function clearFavorites(): void {
   if (!storage) return;
   try {
     storage.removeItem(FAVORITES_KEY);
+  } catch {
+    // 保存できない環境では何もしない
+  }
+}
+
+/** 町が投稿したスポットを読む（N6-5）。不正な値（境界の外・未知の町・写真の種類違い・重複）は捨てる */
+export function loadPostedSpots(): PostedSpot[] {
+  const storage = getStorage();
+  if (!storage) return [];
+  try {
+    const raw = storage.getItem(POSTED_SPOTS_KEY);
+    if (!raw) return [];
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    const out: PostedSpot[] = [];
+    for (const v of parsed) {
+      if (isValidPostedSpot(v) && !out.some((x) => x.id === v.id)) out.push(v);
+    }
+    return out;
+  } catch {
+    return [];
+  }
+}
+
+export function savePostedSpots(spots: PostedSpot[]): boolean {
+  const storage = getStorage();
+  if (!storage) return false;
+  try {
+    storage.setItem(POSTED_SPOTS_KEY, JSON.stringify(spots));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function clearPostedSpots(): void {
+  const storage = getStorage();
+  if (!storage) return;
+  try {
+    storage.removeItem(POSTED_SPOTS_KEY);
   } catch {
     // 保存できない環境では何もしない
   }

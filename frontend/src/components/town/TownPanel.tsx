@@ -5,6 +5,7 @@ import { minutes, score, yen } from '../../lib/format';
 import { buildDayPlan } from '../../lib/plan';
 import { isReference } from '../../lib/stats';
 import { useApp } from '../../state/context';
+import { navigate } from '../../state/useRoute';
 import { useSnapshot, useTownView } from '../../state/selectors';
 import { useVoiceFlow } from '../../state/useVoiceFlow';
 import { TownCard } from '../recommend/TownCard';
@@ -51,7 +52,7 @@ export function TownPanel({ townId }: { townId: string }) {
 
       <button
         type="button"
-        onClick={() => dispatch({ type: 'OPEN_REPORT', townId })}
+        onClick={() => navigate({ page: 'partner', town: townId, tab: 'report' })}
         className="w-full flex items-center justify-center gap-2 rounded-xl border border-glow/60 bg-glow/10 px-3 py-2.5 text-sm font-bold text-glow-soft hover:bg-glow/20"
       >
         <FileText size={16} aria-hidden />

@@ -1,9 +1,8 @@
 import { Header } from './components/Header';
-import { ReportModal } from './components/report/ReportModal';
 import { VoiceModal } from './components/voice/VoiceModal';
 import { AboutPage } from './pages/AboutPage';
 import { DashboardPage } from './pages/DashboardPage';
-import { ReportPage } from './pages/ReportPage';
+import { PartnerPage } from './pages/PartnerPage';
 import { SearchPage } from './pages/SearchPage';
 import { AppStateProvider } from './state/AppStateProvider';
 import { normalizeHash, useRoute } from './state/useRoute';
@@ -18,10 +17,9 @@ function Shell() {
       <Header />
       {route.page === 'search' && <SearchPage />}
       {route.page === 'dashboard' && <DashboardPage />}
-      {route.page === 'report' && <ReportPage />}
+      {route.page === 'partner' && <PartnerPage />}
       {route.page === 'about' && <AboutPage />}
       <VoiceModal />
-      <ReportModal />
     </div>
   );
 }

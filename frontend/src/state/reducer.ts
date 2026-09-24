@@ -1,4 +1,5 @@
 import { summarizeAll } from '../data/seed';
+import { allSpots, type PostedSpot } from '../lib/partner';
 import { SEED_VOICES } from '../data/voices';
 import type {
   Conditions, Elimination, Recommendation, SpotId, TownId, TownSummary, Voice, VoiceAnalysis, VoiceChange,
@@ -39,13 +40,14 @@ export interface AppState {
   selectedTownId: TownId | null;
   noVoiceTownId: TownId | null;
   voiceModal: VoiceModalState | null;
-  reportTownId: TownId | null;
   /** N1: 日本全体か県北か。町を選ぶと必ず 'kenpoku'（設計 決定#16） */
   mapView: MapView;
   /** N1-3: 押した都道府県の名前（「この地域はまだ準備中です」）。null で非表示 */
   prefNotice: string | null;
   /** N3-3: 気になる町（押した順）。localStorage に保存 */
   favorites: TownId[];
+  /** N6: 町が投稿したスポット。localStorage に保存。1日プランと地図の番号には入れない */
+  postedSpots: PostedSpot[];
 }
 
 export type Action =
@@ -62,18 +64,23 @@ export type Action =
   | { type: 'CLOSE_VOICE' }
   | { type: 'ADD_VOICE'; voice: Voice }
   | { type: 'SET_SUMMARY'; summary: TownSummary }
-  | { type: 'OPEN_REPORT'; townId: TownId }
-  | { type: 'CLOSE_REPORT' }
   /** 'japan' にすると選んだ町と地図上の通知を消す（N1-4） */
   | { type: 'SET_MAP_VIEW'; view: MapView }
   | { type: 'SHOW_PREF_NOTICE'; name: string | null }
   | { type: 'TOGGLE_FAVORITE'; townId: TownId }
+  | { type: 'POST_SPOT'; spot: PostedSpot }
+  /** 取り消すと、そのスポットに書かれた利用者の声も消す（設計 13.15.4） */
+  | { type: 'REMOVE_POSTED_SPOT'; spotId: SpotId }
   | { type: 'RESET' };
 
-export function createInitialState(userVoices: Voice[] = [], favorites: TownId[] = []): AppState {
+export function createInitialState(
+  userVoices: Voice[] = [],
+  favorites: TownId[] = [],
+  postedSpots: PostedSpot[] = [],
+): AppState {
   return {
     userVoices,
-    summaries: summarizeAll([...SEED_VOICES, ...userVoices]),
+    summaries: summarizeAll([...SEED_VOICES, ...userVoices], allSpots(postedSpots)),
     messages: [],
     conditions: null,
     recommendation: null,
@@ -85,10 +92,10 @@ export function createInitialState(userVoices: Voice[] = [], favorites: TownId[]
     selectedTownId: null,
     noVoiceTownId: null,
     voiceModal: null,
-    reportTownId: null,
     mapView: 'japan',
     prefNotice: null,
     favorites,
+    postedSpots,
   };
 }
 
@@ -157,10 +164,6 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, userVoices: [...state.userVoices, action.voice] };
     case 'SET_SUMMARY':
       return { ...state, summaries: { ...state.summaries, [action.summary.townId]: action.summary } };
-    case 'OPEN_REPORT':
-      return { ...state, reportTownId: action.townId };
-    case 'CLOSE_REPORT':
-      return { ...state, reportTownId: null };
     case 'SET_MAP_VIEW':
       if (action.view === 'japan') {
         return { ...state, mapView: 'japan', selectedTownId: null, noVoiceTownId: null, prefNotice: null };
@@ -175,7 +178,20 @@ export function reducer(state: AppState, action: Action): AppState {
           ? state.favorites.filter((id) => id !== action.townId)
           : [...state.favorites, action.townId],
       };
+    case 'POST_SPOT':
+      if (state.postedSpots.some((s) => s.id === action.spot.id)) return state;
+      return { ...state, postedSpots: [...state.postedSpots, action.spot] };
+    case 'REMOVE_POSTED_SPOT': {
+      if (!state.postedSpots.some((s) => s.id === action.spotId)) return state;
+      const postedSpots = state.postedSpots.filter((s) => s.id !== action.spotId);
+      const userVoices = state.userVoices.filter((v) => v.spotId !== action.spotId);
+      const summaries =
+        userVoices.length === state.userVoices.length
+          ? state.summaries
+          : summarizeAll([...SEED_VOICES, ...userVoices], allSpots(postedSpots));
+      return { ...state, postedSpots, userVoices, summaries };
+    }
     case 'RESET':
-      return createInitialState([], []);
+      return createInitialState([], [], []);
   }
 }

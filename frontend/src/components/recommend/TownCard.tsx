@@ -4,6 +4,7 @@ import type { CandidateView, FamousPlace } from '../../types';
 import { ScoreBadge } from '../common/ScoreBadge';
 import { TagChip } from '../common/TagChip';
 import { VoiceQuote } from '../common/VoiceQuote';
+import { FavoriteButton } from '../common/FavoriteButton';
 import { hashTags } from '../../lib/format';
 import { quoteText } from '../../lib/candidate';
 
@@ -42,9 +43,28 @@ export function TownCard({ view, rank, famous, onOpen, interactive = true }: Pro
             {rank !== undefined && <span className="font-bold text-glow mr-1">{rank}</span>}
             {town.name}
           </p>
-          <h3 className="text-lg font-extrabold leading-tight">{view.summary.catchphrase}</h3>
+          <h3 className="text-lg font-extrabold leading-tight">
+            {interactive ? (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpen?.();
+                }}
+                className="text-left hover:text-glow-soft"
+                aria-label={`${town.name}（${view.summary.catchphrase}）を詳しく見る`}
+              >
+                {view.summary.catchphrase}
+              </button>
+            ) : (
+              view.summary.catchphrase
+            )}
+          </h3>
         </div>
-        {interactive && <ChevronRight className="text-muted shrink-0 mt-2" size={18} aria-hidden />}
+        <div className="flex items-center gap-1 shrink-0">
+          <FavoriteButton townId={view.townId} size="sm" />
+          {interactive && <ChevronRight className="text-muted shrink-0" size={18} aria-hidden />}
+        </div>
       </div>
       <div className="flex flex-wrap gap-1">
         {view.summary.tags.map((t) => (
@@ -69,15 +89,7 @@ export function TownCard({ view, rank, famous, onOpen, interactive = true }: Pro
     <article
       className="rounded-2xl border border-glow/40 bg-panel-2/70 p-3 space-y-2.5 shadow-[0_0_24px_rgb(251_191_36/0.08)] fade-in cursor-pointer hover:border-glow"
       onClick={onOpen}
-      onKeyDown={(e) => {
-        if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) {
-          e.preventDefault();
-          onOpen?.();
-        }
-      }}
-      tabIndex={0}
-      role="button"
-      aria-label={`${town.name}を詳しく見る`}
+      aria-label={town.name}
     >
       {body}
     </article>

@@ -1,6 +1,6 @@
 import { useCallback, useRef } from 'react';
 import { ai } from '../ai';
-import { spotById } from '../data/spots';
+import { findSpot } from '../lib/partner';
 import { townById } from '../data/towns';
 import { voicesOfTown } from '../lib/candidate';
 import { isAbortError, sleep } from '../lib/sleep';
@@ -20,6 +20,8 @@ export function useVoiceFlow() {
   snapRef.current = snap;
   const summariesRef = useRef(state.summaries);
   summariesRef.current = state.summaries;
+  const stateRef = useRef(state);
+  stateRef.current = state;
 
   const open = useCallback((spotId: SpotId) => dispatch({ type: 'OPEN_VOICE', spotId }), [dispatch]);
 
@@ -30,7 +32,7 @@ export function useVoiceFlow() {
 
   const submit = useCallback(
     async (spotId: SpotId, text: string) => {
-      const spot = spotById(spotId);
+      const spot = findSpot(spotId, stateRef.current.postedSpots);
       if (!spot || !text.trim()) return;
       const signal = tasks.start('voice');
       dispatch({ type: 'SET_VOICE_STEP', voiceModal: { step: 'analyzing', spotId, text } });
@@ -52,7 +54,7 @@ export function useVoiceFlow() {
 
   const confirm = useCallback(
     async (spotId: SpotId, text: string, analysis: VoiceAnalysis) => {
-      const spot = spotById(spotId);
+      const spot = findSpot(spotId, stateRef.current.postedSpots);
       const town = spot && townById(spot.townId);
       if (!spot || !town) return;
       const signal = tasks.start('voice');

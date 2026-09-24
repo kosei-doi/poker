@@ -1,43 +1,19 @@
 import { Bot, SendHorizontal, User } from 'lucide-react';
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
+import { useState, type FormEvent, type KeyboardEvent } from 'react';
 import { EXAMPLES } from '../../data/examples';
 import { useApp } from '../../state/context';
 import { useConsultFlow } from '../../state/useConsultFlow';
 
-/** 相談する（B1） */
-export function ChatPanel() {
+/** 会話（B1）。やりとりは上から下へ積む。スクロールは SearchPage の会話の欄が持つ */
+export function ChatMessages() {
   const { state } = useApp();
-  const { send } = useConsultFlow();
-  const [text, setText] = useState('');
-  const endRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    endRef.current?.scrollIntoView({ block: 'nearest' });
-  }, [state.messages.length, state.consultPhase]);
-
-  const submit = (value: string) => {
-    if (!value.trim()) return;
-    void send(value);
-    setText('');
-  };
-  const onSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    submit(text);
-  };
-  const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
-      e.preventDefault();
-      submit(text);
-    }
-  };
-
   return (
     <section aria-label="相談" className="space-y-3">
       {state.messages.length === 0 && (
         <div className="rounded-xl border border-line bg-panel-2/60 p-3 text-sm leading-relaxed">
           <p className="font-bold text-glow-soft">行き先、決まっていませんか？</p>
           <p className="text-muted mt-1">
-            誰と・予算・雰囲気などを自由に書いてください。「京都の竹林みたいな」のように、知っている場所でたとえても探せます。
+            誰と・予算・雰囲気などを下の欄に自由に書いてください。「京都の竹林みたいな」のように、知っている場所でたとえても探せます。
           </p>
         </div>
       )}
@@ -74,22 +50,54 @@ export function ChatPanel() {
           </li>
         )}
       </ol>
-      <div ref={endRef} />
+    </section>
+  );
+}
 
-      <div className="flex flex-wrap gap-2" aria-label="例文">
-        {EXAMPLES.map((ex) => (
-          <button
-            key={ex.label}
-            type="button"
-            onClick={() => submit(ex.text)}
-            className="rounded-full border border-line bg-panel-2 px-3 py-1.5 text-xs text-text hover:border-glow/70 hover:text-glow-soft text-left"
-            title={ex.text}
-          >
-            {ex.label}
-          </button>
-        ))}
-      </div>
+/**
+ * 入力欄（B1）。会話の欄の一番下に固定する。
+ * 例文ボタンは、まだ何も送っていないときだけ入力欄のすぐ上に出し、押したらそのまま送信する。
+ */
+export function ChatComposer({ onSent }: { onSent?: () => void }) {
+  const { state } = useApp();
+  const { send } = useConsultFlow();
+  const [text, setText] = useState('');
+  const showExamples = state.messages.length === 0 && state.consultPhase === 'idle';
 
+  const submit = (value: string) => {
+    if (!value.trim()) return;
+    void send(value);
+    setText('');
+    onSent?.();
+  };
+  const onSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    submit(text);
+  };
+  const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+      e.preventDefault();
+      submit(text);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      {showExamples && (
+        <div className="flex flex-wrap gap-2" role="group" aria-label="例文（押すとそのまま送信します）">
+          {EXAMPLES.map((ex) => (
+            <button
+              key={ex.label}
+              type="button"
+              onClick={() => submit(ex.text)}
+              className="rounded-full border border-line bg-panel-2 px-3 py-1.5 text-xs text-text hover:border-glow/70 hover:text-glow-soft text-left"
+              title={ex.text}
+            >
+              {ex.label}
+            </button>
+          ))}
+        </div>
+      )}
       <form onSubmit={onSubmit} className="flex items-end gap-2">
         <label className="sr-only" htmlFor="consult-input">
           相談文
@@ -112,6 +120,6 @@ export function ChatPanel() {
           <SendHorizontal size={18} />
         </button>
       </form>
-    </section>
+    </div>
   );
 }

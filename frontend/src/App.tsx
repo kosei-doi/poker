@@ -1,215 +1,157 @@
-import { useState } from 'react';
-import type { EventItem, Footprint } from './types';
-import { INITIAL_EVENTS } from './data/mockData';
-import { Navbar } from './components/Navbar';
-import { EventListView } from './components/EventListView';
-import { EventMapView } from './components/EventMapView';
-import { TourPlannerView } from './components/TourPlannerView';
-import { EventMatchFinder } from './components/EventMatchFinder';
-import { EventDetailModal } from './components/EventDetailModal';
-import { EventPostModal } from './components/EventPostModal';
-import { AddFootprintModal } from './components/AddFootprintModal';
+import { useEffect, useState } from 'react';
 import { Heart, Sparkles } from 'lucide-react';
+import type { Footprint, Spot } from './types';
+import { INITIAL_SPOTS } from './data/mockData';
+import { Navbar, type TabKey } from './components/Navbar';
+import { SpotListView } from './components/SpotListView';
+import { FootprintMapView } from './components/FootprintMapView';
+import { AiPlannerView } from './components/AiPlannerView';
+import { SpotDetailModal } from './components/SpotDetailModal';
+import { SpotPostModal } from './components/SpotPostModal';
+import { AddFootprintModal } from './components/AddFootprintModal';
+
+const STORAGE_KEY = 'meguri:spots:v1';
+
+// デモ中に投稿したスポット・足跡をリロードしても残すため、ブラウザに保存する
+function loadSpots(): Spot[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw) as Spot[];
+  } catch {
+    // 保存データが読めなければ初期データで始める
+  }
+  return INITIAL_SPOTS;
+}
 
 export function App() {
-  const [events, setEvents] = useState<EventItem[]>(INITIAL_EVENTS);
-  const [activeTab, setActiveTab] = useState<'events' | 'matching' | 'map' | 'planner'>('events');
+  const [spots, setSpots] = useState<Spot[]>(loadSpots);
+  const [activeTab, setActiveTab] = useState<TabKey>('discover');
 
-  // Modals state
-  const [detailModalEvent, setDetailModalEvent] = useState<EventItem | null>(null);
-  const [isPostModalOpen, setIsPostModalOpen] = useState(false);
-  const [footprintModalEvent, setFootprintModalEvent] = useState<EventItem | null>(null);
+  const [detailSpotId, setDetailSpotId] = useState<string | null>(null);
+  const [footprintSpotId, setFootprintSpotId] = useState<string | null>(null);
+  const [isPostOpen, setIsPostOpen] = useState(false);
+  const [mapFocus, setMapFocus] = useState<Spot | null>(null);
+  const [plannerSpot, setPlannerSpot] = useState<Spot | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
 
-  // Selected event for focusing on Map or Planner
-  const [selectedEventForMap, setSelectedEventForMap] = useState<EventItem | null>(null);
-  const [plannerBaseEventId, setPlannerBaseEventId] = useState<string | undefined>(undefined);
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(spots));
+    } catch {
+      // 保存できなくても画面はそのまま使える
+    }
+  }, [spots]);
 
-  // Success toast/notification state
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  // モーダルは id で持ち、足跡追加後も最新のスポットを表示する
+  const detailSpot = spots.find((s) => s.id === detailSpotId) ?? null;
+  const footprintSpot = spots.find((s) => s.id === footprintSpotId) ?? null;
+  const totalFootprints = spots.reduce((acc, s) => acc + s.footprints.length, 0);
 
   const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3500);
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
   };
 
-  // Add new event
-  const handleAddEvent = (newEvent: EventItem) => {
-    setEvents((prev) => [newEvent, ...prev]);
-    showToast(`催し「${newEvent.title}」を公開しました！`);
+  const handleAddSpot = (spot: Spot) => {
+    setSpots((prev) => [spot, ...prev]);
+    showToast(`「${spot.name}」を公開しました！`);
+    setDetailSpotId(spot.id);
   };
 
-  // Add new footprint
-  const handleAddFootprint = (eventId: string, newFootprint: Footprint) => {
-    setEvents((prev) =>
-      prev.map((evt) => {
-        if (evt.id === eventId) {
-          return {
-            ...evt,
-            footprints: [...evt.footprints, newFootprint],
-          };
-        }
-        return evt;
-      })
-    );
-    // Also update detail modal event if currently viewing
-    if (detailModalEvent && detailModalEvent.id === eventId) {
-      setDetailModalEvent((prev) =>
-        prev
-          ? {
-              ...prev,
-              footprints: [...prev.footprints, newFootprint],
-            }
-          : null
-      );
-    }
-    showToast(`足跡を投稿しました！ありがとうございます👣`);
+  const handleAddFootprint = (spotId: string, fp: Footprint) => {
+    setSpots((prev) => prev.map((s) => (s.id === spotId ? { ...s, footprints: [...s.footprints, fp] } : s)));
+    showToast('足跡を残しました 👣');
   };
 
-  // Switch to Map and focus on specific event
-  const handleViewOnMap = (event: EventItem) => {
-    setSelectedEventForMap(event);
-    setActiveTab('map');
+  const goTab = (tab: TabKey) => {
+    setActiveTab(tab);
+    window.scrollTo({ top: 0 });
   };
 
-  // Switch to Planner with specific event
-  const handlePlanTripWithEvent = (event: EventItem) => {
-    setPlannerBaseEventId(event.id);
-    setActiveTab('planner');
+  const viewOnMap = (spot: Spot) => {
+    setDetailSpotId(null);
+    setMapFocus(spot);
+    goTab('map');
   };
 
-  const totalFootprints = events.reduce((acc, curr) => acc + curr.footprints.length, 0);
+  const planWithSpot = (spot: Spot) => {
+    setDetailSpotId(null);
+    setPlannerSpot(spot);
+    goTab('planner');
+  };
 
   return (
-    <div className="min-h-screen bg-stone-50 flex flex-col font-sans selection:bg-emerald-100 selection:text-emerald-900">
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed top-20 right-6 z-50 bg-stone-900/90 text-white text-xs sm:text-sm font-semibold px-4 py-3 rounded-2xl shadow-2xl backdrop-blur-md border border-stone-700 flex items-center gap-2 animate-bounce">
+    <div className="min-h-screen bg-stone-50 flex flex-col font-sans">
+      {toast && (
+        <div className="fixed top-20 right-4 z-[60] bg-stone-900/90 text-white text-sm font-semibold px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-amber-400" />
-          <span>{toastMessage}</span>
+          {toast}
         </div>
       )}
 
-      {/* Navigation Header */}
       <Navbar
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        onOpenPostModal={() => setIsPostModalOpen(true)}
-        eventCount={events.length}
+        setActiveTab={goTab}
+        onOpenPostModal={() => setIsPostOpen(true)}
+        spotCount={spots.length}
         totalFootprints={totalFootprints}
       />
 
-      {/* Main Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-20 md:pb-8">
-        {activeTab === 'events' && (
-          <EventListView
-            events={events}
-            onSelectEvent={(evt) => setDetailModalEvent(evt)}
-            onViewOnMap={handleViewOnMap}
-            onAddFootprint={(evt) => setFootprintModalEvent(evt)}
-            onGoToPlanner={() => setActiveTab('planner')}
-            onGoToMatching={() => setActiveTab('matching')}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-5 pb-24 md:pb-10">
+        {activeTab === 'discover' && (
+          <SpotListView
+            spots={spots}
+            onSelectSpot={(s) => setDetailSpotId(s.id)}
+            onOpenPost={() => setIsPostOpen(true)}
+            onGoToPlanner={() => goTab('planner')}
           />
         )}
-
-        {activeTab === 'matching' && (
-          <div className="pb-16">
-            <EventMatchFinder
-              events={events}
-              onSelectEvent={(evt) => setDetailModalEvent(evt)}
-              onViewOnMap={handleViewOnMap}
-              onPlanTrip={handlePlanTripWithEvent}
-            />
-          </div>
-        )}
-
         {activeTab === 'map' && (
-          <EventMapView
-            events={events}
-            selectedEventForMap={selectedEventForMap}
-            onSelectEvent={(evt) => setDetailModalEvent(evt)}
-            onOpenAddFootprint={(evt) => setFootprintModalEvent(evt)}
-            onPlanTrip={handlePlanTripWithEvent}
+          <FootprintMapView
+            key={mapFocus?.id ?? 'all'}
+            spots={spots}
+            focusSpot={mapFocus}
+            onSelectSpot={(s) => setDetailSpotId(s.id)}
+            onAddFootprint={(s) => setFootprintSpotId(s.id)}
           />
         )}
-
         {activeTab === 'planner' && (
-          <TourPlannerView
-            events={events}
-            initialSelectedEventId={plannerBaseEventId}
-            onSelectEvent={(evt) => setDetailModalEvent(evt)}
+          <AiPlannerView
+            key={plannerSpot?.id ?? 'free'}
+            spots={spots}
+            initialSpot={plannerSpot}
+            onSelectSpot={(s) => setDetailSpotId(s.id)}
           />
         )}
       </main>
 
-      {/* Footer (Hidden on Map tab) */}
-      {activeTab !== 'map' && (
-        <footer className="bg-stone-900 text-stone-400 border-t border-stone-800 pt-8 pb-24 md:py-10 mt-auto">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-              <div>
-                <div className="flex items-center gap-2 text-white font-extrabold text-lg mb-1">
-                  <span className="w-6 h-6 rounded-lg bg-emerald-600 flex items-center justify-center text-xs">
-                    🌱
-                  </span>
-                  <span>めぐりまち - MeguriMachi</span>
-                </div>
-                <p className="text-xs text-stone-400 max-w-md leading-relaxed">
-                  地域のあたたかい催しと旅人の足跡を可視化し、持続的な地域周遊と関係人口の創出を加速する地域創生プラットフォーム。
-                </p>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-6 text-xs">
-                <span className="hover:text-stone-200 cursor-pointer" onClick={() => setActiveTab('events')}>
-                  催し一覧
-                </span>
-                <span className="hover:text-stone-200 cursor-pointer" onClick={() => setActiveTab('matching')}>
-                  ぴったり診断
-                </span>
-                <span className="hover:text-stone-200 cursor-pointer" onClick={() => setActiveTab('map')}>
-                  足跡マップ
-                </span>
-                <span className="hover:text-stone-200 cursor-pointer" onClick={() => setActiveTab('planner')}>
-                  周遊プラン
-                </span>
-                <span
-                  className="text-emerald-400 hover:text-emerald-300 font-semibold cursor-pointer"
-                  onClick={() => setIsPostModalOpen(true)}
-                >
-                  + 催しを投稿
-                </span>
-              </div>
-            </div>
-
-            <div className="mt-8 pt-6 border-t border-stone-800 text-center text-xs text-stone-500 flex flex-col sm:flex-row items-center justify-between gap-2">
-              <span>© 2026 めぐりまち プロジェクト (Hackathon Edition)</span>
-              <span className="flex items-center gap-1">
-                Made with <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" /> for Local Revitalization
-              </span>
-            </div>
+      <footer className="bg-stone-900 text-stone-400 pt-8 pb-24 md:py-8 text-xs">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between gap-4">
+          <div>
+            <p className="text-white font-extrabold text-base mb-1">🌱 めぐりまち</p>
+            <p className="max-w-md leading-relaxed">
+              地元の人が教える穴場と、旅人・地域の人の足跡をつなぎ、関係人口と地域の小さな経済を育てる地域創生プラットフォーム。
+            </p>
           </div>
-        </footer>
-      )}
+          <p className="flex items-center gap-1 self-end">
+            Made with <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" /> for Local Revitalization — Hackathon Edition
+          </p>
+        </div>
+      </footer>
 
-      {/* Modals */}
-      <EventDetailModal
-        event={detailModalEvent}
-        onClose={() => setDetailModalEvent(null)}
-        onViewOnMap={handleViewOnMap}
-        onOpenAddFootprint={(evt) => setFootprintModalEvent(evt)}
-        onPlanTripWithEvent={handlePlanTripWithEvent}
+      <SpotDetailModal
+        spot={detailSpot}
+        onClose={() => setDetailSpotId(null)}
+        onAddFootprint={(s) => setFootprintSpotId(s.id)}
+        onViewOnMap={viewOnMap}
+        onPlanWithSpot={planWithSpot}
       />
-
-      <EventPostModal
-        isOpen={isPostModalOpen}
-        onClose={() => setIsPostModalOpen(false)}
-        onAddEvent={handleAddEvent}
-      />
-
+      <SpotPostModal open={isPostOpen} onClose={() => setIsPostOpen(false)} onAdd={handleAddSpot} />
       <AddFootprintModal
-        event={footprintModalEvent}
-        isOpen={!!footprintModalEvent}
-        onClose={() => setFootprintModalEvent(null)}
-        onAddFootprint={handleAddFootprint}
+        key={footprintSpotId ?? 'none'}
+        spot={footprintSpot}
+        onClose={() => setFootprintSpotId(null)}
+        onAdd={handleAddFootprint}
       />
     </div>
   );

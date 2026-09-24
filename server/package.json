@@ -1,0 +1,19 @@
+{
+  "name": "meguri-ai-server",
+  "scripts": {
+    "dev": "tsx watch --env-file-if-exists=.env index.ts",
+    "start": "tsx --env-file-if-exists=.env index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "type": "module",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.128.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.2",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  },
+  "private": true
+}

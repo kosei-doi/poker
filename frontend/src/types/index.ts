@@ -1,74 +1,87 @@
-export type EventCategory = 
-  | 'festival'    // 祭り・伝統行事
-  | 'marche'      // マルシェ・朝市・食
-  | 'workshop'    // 体験・クラフト・学び
-  | 'nature'      // 自然・農業・アウトドア
-  | 'culture'     // アート・音楽・文化
-  | 'volunteer';   // 地域づくり・お手伝い
+export type SpotCategory =
+  | 'gourmet'  // 食・カフェ・直売所
+  | 'nature'   // 自然・散策
+  | 'view'     // 絶景・夕日・星空
+  | 'onsen'    // 温泉・銭湯
+  | 'craft'    // 手仕事・体験
+  | 'history'; // 歴史・文化・町並み
+
+/** 足跡を残した人の立場。地図上で色分けする */
+export type FootprintUserType = 'visitor' | 'local';
 
 export interface Footprint {
   id: string;
-  eventId: string;
+  spotId: string;
   userName: string;
-  userType: '観光客' | '移住検討中' | 'ワーケーション' | '地元ファン';
-  avatarUrl?: string;
-  date: string;
+  userType: FootprintUserType;
+  /** 旅人なら「東京から」、地元なら「安曇野在住20年」など */
+  profile: string;
+  date: string; // YYYY-MM-DD
   comment: string;
   rating: number;
-  highlightTag?: string;
+  lat: number;
+  lng: number;
 }
 
-export interface NearbySpot {
+export interface SpotAuthor {
+  name: string;
+  /** 例: 「安曇野生まれ・農家」 */
+  relation: string;
+}
+
+export interface Spot {
   id: string;
   name: string;
-  category: string;
-  distance: string;
-  description: string;
-}
-
-export interface EventItem {
-  id: string;
-  title: string;
-  category: EventCategory;
-  date: string;
-  time: string;
-  locationName: string;
+  category: SpotCategory;
+  area: string;
   address: string;
   lat: number;
   lng: number;
-  description: string;
   catchphrase: string;
-  organizer: {
-    name: string;
-    role: string;
-    avatar: string;
-    story: string;
-  };
+  description: string;
+  /** 地元の人だけが知っている楽しみ方 */
+  localTip: string;
+  bestTime: string;
+  stayMinutes: number;
   imageUrl: string;
   tags: string[];
-  recommendedFor: string[];
+  author: SpotAuthor;
+  postedAt: string; // YYYY-MM-DD
   footprints: Footprint[];
-  nearbySpots: NearbySpot[];
-  capacity?: string;
-  fee?: string;
 }
 
-export interface TourPlanItem {
-  time: string;
-  title: string;
-  type: 'event' | 'spot' | 'meal' | 'break';
-  description: string;
-  locationName: string;
-  tips?: string;
-}
-
-export interface TourPlan {
-  id: string;
-  title: string;
-  subtitle: string;
-  theme: string;
-  target: string;
+export interface PlanPreferences {
+  area: string;
   duration: string;
-  recommendedTransport: string;
-  items: TourPlanItem[];
+  interests: string[];
+  companion: string;
+  pace: string;
+  transport: string;
+  note?: string;
+  /** 詳細画面から「ここを含む旅プラン」を選んだときのスポット */
+  mustIncludeSpotId?: string;
+}
+
+export interface TripPlanItem {
+  time: string;
+  spotId: string | null;
+  title: string;
+  description: string;
+  localTip: string | null;
+  transport: string | null;
+  durationMin: number;
+}
+
+export interface TripPlanDay {
+  day: number;
+  theme: string;
+  items: TripPlanItem[];
+}
+
+export interface TripPlan {
+  title: string;
+  summary: string;
+  highlights: string[];
+  days: TripPlanDay[];
+  tips: string[];
 }

@@ -5,6 +5,8 @@ import { DashboardPage } from './pages/DashboardPage';
 import { PartnerPage } from './pages/PartnerPage';
 import { SearchPage } from './pages/SearchPage';
 import { AppStateProvider } from './state/AppStateProvider';
+import { useEffect } from 'react';
+import { PAGES, toHash } from './lib/route';
 import { normalizeHash, useRoute } from './state/useRoute';
 
 // 起動時にハッシュを正規形にする（再読み込みで同じページが開く。N2-2）
@@ -12,6 +14,16 @@ normalizeHash();
 
 function Shell() {
   const route = useRoute();
+  // ページごとのタイトル
+  useEffect(() => {
+    const label = PAGES.find((p) => p.page === route.page)?.title ?? '';
+    document.title = `穴場 — ${label}`;
+  }, [route.page]);
+  // アプリの中でハッシュが変わったときも正規形に直す（以前の #/report・未知のページや町。N2-2）
+  const canonical = toHash(route);
+  useEffect(() => {
+    if (window.location.hash !== canonical) history.replaceState(null, '', canonical);
+  }, [canonical]);
   return (
     <div className="h-full flex flex-col">
       <Header />

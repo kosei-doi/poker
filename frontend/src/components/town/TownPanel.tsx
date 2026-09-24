@@ -1,4 +1,4 @@
-import { ArrowLeft, FileText, PenLine } from 'lucide-react';
+import { ArrowLeft, FileText, Megaphone, PenLine } from 'lucide-react';
 import { spotsOfTown } from '../../data/spots';
 import { townById } from '../../data/towns';
 import { minutes, score, yen } from '../../lib/format';
@@ -20,7 +20,11 @@ export function TownPanel({ townId }: { townId: string }) {
   const town = townById(townId);
   if (!town || !view) return null;
   const spots = spotsOfTown(townId);
+  // 1日プランの順路は v1 のスポットだけ（町からの投稿は入れない。N6-3）
   const plan = buildDayPlan(town, spots, state.conditions);
+  const posted = state.postedSpots
+    .filter((s) => s.townId === townId)
+    .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
 
   return (
     <section aria-label={`${town.name}の詳細`} className="space-y-4 fade-in">
@@ -98,6 +102,59 @@ export function TownPanel({ townId }: { townId: string }) {
           })}
         </ul>
       </section>
+
+      {posted.length > 0 && (
+        <section aria-label="町からの投稿" className="space-y-2">
+          <h3 className="flex items-center gap-1.5 text-sm font-bold">
+            <Megaphone size={15} className="text-glow" aria-hidden />
+            町からの投稿
+          </h3>
+          <p className="text-xs text-muted">町の事業者・観光協会が投稿したスポットです。1日プランの順路には入りません。</p>
+          <ul className="space-y-2">
+            {posted.map((s) => {
+              const st = snap.stats.spots[s.id];
+              const count = st?.count ?? 0;
+              return (
+                <li key={s.id} className="rounded-xl border border-glow/40 bg-panel-2/60 p-3 space-y-1.5">
+                  <div className="flex items-start gap-2">
+                    <span className="shrink-0 rounded-full border border-glow/60 bg-glow/15 text-glow-soft text-[10px] font-bold px-2 py-0.5">
+                      町からの投稿
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-sm">
+                        {s.name}
+                        <span className="ml-2 text-[11px] font-normal text-muted">{s.kind}</span>
+                      </p>
+                      <p className="text-xs text-muted">{s.description}</p>
+                      <p className="text-xs text-muted">
+                        滞在 {minutes(s.stayMin)}・{s.costYen > 0 ? yen(s.costYen) : '無料'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    {count === 0 ? (
+                      <p className="text-xs text-muted">まだ声がありません</p>
+                    ) : (
+                      <p className="text-xs text-muted tabular-nums">
+                        穴場度 <span className="font-bold text-glow">{score(st.hole)}</span>・n={count}
+                        {isReference(count) && <span className="ml-1 rounded border border-line px-1">参考値</span>}
+                      </p>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => open(s.id)}
+                      className="flex items-center gap-1 rounded-lg bg-glow text-[#1c1300] px-2.5 py-1 text-xs font-bold"
+                    >
+                      <PenLine size={13} aria-hidden />
+                      感想を書く
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
 
       <DayPlan plan={plan} budgetYen={state.conditions?.budgetYen ?? null} roundTripYen={town.roundTripYen} />
     </section>

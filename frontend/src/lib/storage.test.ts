@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { voice } from '../test/fixtures';
 import {
-  clearFavorites, clearUserVoices, FAVORITES_KEY, loadFavorites, loadUserVoices, saveFavorites, saveUserVoices,
-  USER_VOICES_KEY,
+  clearFavorites, clearPostedSpots, clearUserVoices, FAVORITES_KEY, loadFavorites, loadPostedSpots, loadUserVoices,
+  POSTED_SPOTS_KEY, saveFavorites, savePostedSpots, saveUserVoices, USER_VOICES_KEY,
 } from './storage';
 
 class MemoryStorage {
@@ -105,6 +105,53 @@ describe('storage', () => {
       expect(loadFavorites(townIds)).toEqual([]);
       expect(saveFavorites(['hitachi'])).toBe(false);
       expect(() => clearFavorites()).not.toThrow();
+    });
+  });
+
+  describe('町が投稿したスポット（N6-5）', () => {
+    const ok = {
+      id: 'posted-a1', townId: 'hitachiota', name: '新しい茶屋', kind: '食べる', description: '説明', lat: 36.535,
+      lng: 140.515, order: 0, stayMin: 30, moveMin: 0, costYen: 500, posted: true, photoSpotId: 'hitachiota-soba',
+      createdAt: '2026-09-24T10:00:00.000Z',
+    };
+    it('保存して読み戻せる。消すと空', () => {
+      g.localStorage = new MemoryStorage();
+      expect(savePostedSpots([ok as never])).toBe(true);
+      expect(loadPostedSpots()).toEqual([ok]);
+      clearPostedSpots();
+      expect(loadPostedSpots()).toEqual([]);
+    });
+    it('境界の外・未知の町・写真の種類違い・id の形・重複・壊れた値を捨てる', () => {
+      const m = new MemoryStorage();
+      g.localStorage = m;
+      m.setItem(POSTED_SPOTS_KEY, '{');
+      expect(loadPostedSpots()).toEqual([]);
+      const bad = [
+        { ...ok, id: 'posted-b1', lat: 36.9, lng: 140.9 },
+        { ...ok, id: 'posted-b2', townId: 'hitachiomiya' },
+        { ...ok, id: 'posted-b3', photoSpotId: 'hitachiota-bamboo' },
+        { ...ok, id: 'x-1' },
+        { ...ok, id: 'posted-b4', name: '  ' },
+        null,
+      ];
+      m.setItem(POSTED_SPOTS_KEY, JSON.stringify([ok, ok, ...bad]));
+      expect(loadPostedSpots().map((s) => s.id)).toEqual(['posted-a1']);
+    });
+    it('例外を投げる環境でも落ちない', () => {
+      g.localStorage = {
+        getItem() {
+          throw new Error('denied');
+        },
+        setItem() {
+          throw new Error('quota');
+        },
+        removeItem() {
+          throw new Error('denied');
+        },
+      };
+      expect(loadPostedSpots()).toEqual([]);
+      expect(savePostedSpots([])).toBe(false);
+      expect(() => clearPostedSpots()).not.toThrow();
     });
   });
 });

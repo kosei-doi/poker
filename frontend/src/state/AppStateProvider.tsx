@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useReducer, useRef, type ReactNode } from 'react';
 import { SPOTS } from '../data/spots';
-import { loadUserVoices, saveUserVoices } from '../lib/storage';
+import { TOWNS } from '../data/towns';
+import { loadFavorites, loadUserVoices, saveFavorites, saveUserVoices } from '../lib/storage';
 import { AppContext, type TaskRunner } from './context';
 import { createInitialState, reducer } from './reducer';
 
 export function AppStateProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, undefined, () =>
-    createInitialState(loadUserVoices(new Set(SPOTS.map((s) => s.id)))),
+    createInitialState(loadUserVoices(new Set(SPOTS.map((s) => s.id))), loadFavorites(new Set(TOWNS.map((t) => t.id)))),
   );
 
   // 利用者の声だけを localStorage に保存する（保存できない環境でも state だけで動く）
@@ -18,6 +19,16 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     }
     saveUserVoices(state.userVoices);
   }, [state.userVoices]);
+
+  // 気になる町も同じく保存する（N3-3・要件8章）
+  const firstFav = useRef(true);
+  useEffect(() => {
+    if (firstFav.current) {
+      firstFav.current = false;
+      return;
+    }
+    saveFavorites(state.favorites);
+  }, [state.favorites]);
 
   const controllers = useRef(new Map<string, AbortController>());
   const tasks = useMemo<TaskRunner>(

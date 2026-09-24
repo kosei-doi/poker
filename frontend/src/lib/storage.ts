@@ -1,6 +1,7 @@
-import { TAGS, type SpotId, type Voice } from '../types';
+import { TAGS, type SpotId, type TownId, type Voice } from '../types';
 
 export const USER_VOICES_KEY = 'anaba-poc/v1/userVoices';
+export const FAVORITES_KEY = 'anaba-poc/v1/favorites';
 
 function getStorage(): Storage | null {
   try {
@@ -62,6 +63,46 @@ export function clearUserVoices(): void {
   if (!storage) return;
   try {
     storage.removeItem(USER_VOICES_KEY);
+  } catch {
+    // 保存できない環境では何もしない
+  }
+}
+
+/** 気になる町を読む（N3-3）。未知の id・重複・壊れた値は捨てる。保存できない環境では空配列 */
+export function loadFavorites(townIds: Set<TownId>): TownId[] {
+  const storage = getStorage();
+  if (!storage) return [];
+  try {
+    const raw = storage.getItem(FAVORITES_KEY);
+    if (!raw) return [];
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    const out: TownId[] = [];
+    for (const id of parsed) {
+      if (typeof id === 'string' && townIds.has(id) && !out.includes(id)) out.push(id);
+    }
+    return out;
+  } catch {
+    return [];
+  }
+}
+
+export function saveFavorites(favorites: TownId[]): boolean {
+  const storage = getStorage();
+  if (!storage) return false;
+  try {
+    storage.setItem(FAVORITES_KEY, JSON.stringify(favorites));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function clearFavorites(): void {
+  const storage = getStorage();
+  if (!storage) return;
+  try {
+    storage.removeItem(FAVORITES_KEY);
   } catch {
     // 保存できない環境では何もしない
   }

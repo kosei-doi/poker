@@ -6,6 +6,9 @@ import type {
 
 export type ConsultPhase = 'idle' | 'thinking' | 'narrowing' | 'done';
 
+/** 地図の表示範囲（N1）。最初は日本全体 */
+export type MapView = 'japan' | 'kenpoku';
+
 export interface Message {
   id: string;
   role: 'user' | 'ai';
@@ -37,6 +40,12 @@ export interface AppState {
   noVoiceTownId: TownId | null;
   voiceModal: VoiceModalState | null;
   reportTownId: TownId | null;
+  /** N1: 日本全体か県北か。町を選ぶと必ず 'kenpoku'（設計 決定#16） */
+  mapView: MapView;
+  /** N1-3: 押した都道府県の名前（「この地域はまだ準備中です」）。null で非表示 */
+  prefNotice: string | null;
+  /** N3-3: 気になる町（押した順）。localStorage に保存 */
+  favorites: TownId[];
 }
 
 export type Action =
@@ -55,9 +64,13 @@ export type Action =
   | { type: 'SET_SUMMARY'; summary: TownSummary }
   | { type: 'OPEN_REPORT'; townId: TownId }
   | { type: 'CLOSE_REPORT' }
+  /** 'japan' にすると選んだ町と地図上の通知を消す（N1-4） */
+  | { type: 'SET_MAP_VIEW'; view: MapView }
+  | { type: 'SHOW_PREF_NOTICE'; name: string | null }
+  | { type: 'TOGGLE_FAVORITE'; townId: TownId }
   | { type: 'RESET' };
 
-export function createInitialState(userVoices: Voice[] = []): AppState {
+export function createInitialState(userVoices: Voice[] = [], favorites: TownId[] = []): AppState {
   return {
     userVoices,
     summaries: summarizeAll([...SEED_VOICES, ...userVoices]),
@@ -73,6 +86,9 @@ export function createInitialState(userVoices: Voice[] = []): AppState {
     noVoiceTownId: null,
     voiceModal: null,
     reportTownId: null,
+    mapView: 'japan',
+    prefNotice: null,
+    favorites,
   };
 }
 
@@ -121,7 +137,13 @@ export function reducer(state: AppState, action: Action): AppState {
     case 'SHOW_EMPTY':
       return { ...state, showEmpty: true, consultPhase: 'done', messages: [...state.messages, action.message] };
     case 'SELECT_TOWN':
-      return { ...state, selectedTownId: action.townId, noVoiceTownId: null };
+      return {
+        ...state,
+        selectedTownId: action.townId,
+        noVoiceTownId: null,
+        prefNotice: null,
+        mapView: action.townId !== null ? 'kenpoku' : state.mapView,
+      };
     case 'SHOW_NO_VOICE':
       return { ...state, noVoiceTownId: action.townId };
     case 'OPEN_VOICE':
@@ -139,7 +161,21 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, reportTownId: action.townId };
     case 'CLOSE_REPORT':
       return { ...state, reportTownId: null };
+    case 'SET_MAP_VIEW':
+      if (action.view === 'japan') {
+        return { ...state, mapView: 'japan', selectedTownId: null, noVoiceTownId: null, prefNotice: null };
+      }
+      return { ...state, mapView: 'kenpoku', prefNotice: null };
+    case 'SHOW_PREF_NOTICE':
+      return { ...state, prefNotice: action.name };
+    case 'TOGGLE_FAVORITE':
+      return {
+        ...state,
+        favorites: state.favorites.includes(action.townId)
+          ? state.favorites.filter((id) => id !== action.townId)
+          : [...state.favorites, action.townId],
+      };
     case 'RESET':
-      return createInitialState([]);
+      return createInitialState([], []);
   }
 }

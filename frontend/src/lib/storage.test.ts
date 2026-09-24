@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { voice } from '../test/fixtures';
-import { clearUserVoices, loadUserVoices, saveUserVoices, USER_VOICES_KEY } from './storage';
+import {
+  clearFavorites, clearUserVoices, FAVORITES_KEY, loadFavorites, loadUserVoices, saveFavorites, saveUserVoices,
+  USER_VOICES_KEY,
+} from './storage';
 
 class MemoryStorage {
   data = new Map<string, string>();
@@ -64,5 +67,44 @@ describe('storage', () => {
   it('localStorage がない環境でも落ちない', () => {
     expect(loadUserVoices(spotIds)).toEqual([]);
     expect(saveUserVoices([])).toBe(false);
+  });
+
+  describe('気になる町（N3-3）', () => {
+    const townIds = new Set(['hitachiota', 'takahagi', 'hitachi']);
+    it('保存して読み戻せる。消すと空', () => {
+      g.localStorage = new MemoryStorage();
+      expect(saveFavorites(['takahagi', 'hitachiota'])).toBe(true);
+      expect(loadFavorites(townIds)).toEqual(['takahagi', 'hitachiota']);
+      clearFavorites();
+      expect(loadFavorites(townIds)).toEqual([]);
+    });
+    it('壊れた値・未知の id・重複を捨てる', () => {
+      const m = new MemoryStorage();
+      g.localStorage = m;
+      m.setItem(FAVORITES_KEY, 'broken{');
+      expect(loadFavorites(townIds)).toEqual([]);
+      m.setItem(FAVORITES_KEY, '"hitachi"');
+      expect(loadFavorites(townIds)).toEqual([]);
+      m.setItem(FAVORITES_KEY, JSON.stringify(['hitachi', 'nope', 3, 'hitachi', 'takahagi']));
+      expect(loadFavorites(townIds)).toEqual(['hitachi', 'takahagi']);
+    });
+    it('例外を投げる環境・ない環境でも落ちない', () => {
+      expect(loadFavorites(townIds)).toEqual([]);
+      expect(saveFavorites(['hitachi'])).toBe(false);
+      g.localStorage = {
+        getItem() {
+          throw new Error('denied');
+        },
+        setItem() {
+          throw new Error('quota');
+        },
+        removeItem() {
+          throw new Error('denied');
+        },
+      };
+      expect(loadFavorites(townIds)).toEqual([]);
+      expect(saveFavorites(['hitachi'])).toBe(false);
+      expect(() => clearFavorites()).not.toThrow();
+    });
   });
 });

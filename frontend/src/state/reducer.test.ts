@@ -42,4 +42,49 @@ describe('reducer', () => {
       ['daigo', 'hitachi', 'hitachiota', 'kitaibaraki', 'takahagi'],
     );
   });
+
+  it('初期状態は日本全体の表示で、気になる町は空', () => {
+    const s0 = createInitialState();
+    expect(s0.mapView).toBe('japan');
+    expect(s0.favorites).toEqual([]);
+    expect(s0.prefNotice).toBeNull();
+  });
+
+  it('TOGGLE_FAVORITE で付けて、もう一度で外す（押した順を保つ）', () => {
+    let s = reducer(createInitialState(), { type: 'TOGGLE_FAVORITE', townId: 'takahagi' });
+    s = reducer(s, { type: 'TOGGLE_FAVORITE', townId: 'hitachiota' });
+    expect(s.favorites).toEqual(['takahagi', 'hitachiota']);
+    s = reducer(s, { type: 'TOGGLE_FAVORITE', townId: 'takahagi' });
+    expect(s.favorites).toEqual(['hitachiota']);
+  });
+
+  it('町を選ぶと県北の表示になり、選択を外しても表示は変えない', () => {
+    let s = reducer(createInitialState(), { type: 'SHOW_PREF_NOTICE', name: '栃木県' });
+    s = reducer(s, { type: 'SELECT_TOWN', townId: 'hitachiota' });
+    expect(s.mapView).toBe('kenpoku');
+    expect(s.prefNotice).toBeNull();
+    s = reducer(s, { type: 'SELECT_TOWN', townId: null });
+    expect(s.mapView).toBe('kenpoku');
+  });
+
+  it("SET_MAP_VIEW('japan') で選んだ町と通知が消える。会話と提案は残す", () => {
+    let s = reducer(createInitialState(), { type: 'START_CONSULT', message: msg('a') });
+    s = reducer(s, { type: 'SELECT_TOWN', townId: 'hitachiota' });
+    s = reducer(s, { type: 'SHOW_NO_VOICE', townId: 'hitachiomiya' });
+    s = reducer(s, { type: 'SET_MAP_VIEW', view: 'japan' });
+    expect(s.mapView).toBe('japan');
+    expect(s.selectedTownId).toBeNull();
+    expect(s.noVoiceTownId).toBeNull();
+    expect(s.messages).toHaveLength(1);
+    s = reducer(s, { type: 'SHOW_PREF_NOTICE', name: '栃木県' });
+    expect(reducer(s, { type: 'SET_MAP_VIEW', view: 'kenpoku' }).prefNotice).toBeNull();
+  });
+
+  it('RESET で気になる町が消え、日本全体の表示に戻る', () => {
+    let s = createInitialState([], ['takahagi']);
+    s = reducer(s, { type: 'SET_MAP_VIEW', view: 'kenpoku' });
+    s = reducer(s, { type: 'RESET' });
+    expect(s.favorites).toEqual([]);
+    expect(s.mapView).toBe('japan');
+  });
 });

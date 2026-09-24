@@ -15,7 +15,8 @@ export function Modal({ title, onClose, children, footer }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const prev = document.activeElement as HTMLElement | null;
-    ref.current?.focus();
+    // 中の入力欄が autoFocus で先にフォーカスを取っていれば、それを残す
+    if (!ref.current?.contains(document.activeElement)) ref.current?.focus();
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };

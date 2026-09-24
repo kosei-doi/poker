@@ -26,16 +26,25 @@ const STYLES: Record<TownLook, L.PathOptions> = {
   selected: { fillColor: '#fbbf24', fillOpacity: 0.85, color: '#fff7d6', weight: 3 },
 };
 
-/** ラベルが地図の端からはみ出さないよう、はみ出した分だけ内側へずらす */
+/**
+ * ラベルが地図の端からはみ出さないよう、はみ出した分だけ内側へずらす。
+ * ラベルの基準点（町の中）が画面の外にあるときは、端に積み重ならないよう隠す。
+ */
 function keepLabelsInside(container: HTMLElement) {
   const box = container.getBoundingClientRect();
   const margin = 6;
+  const bottomSafe = 28; // 出典表示の分
   container.querySelectorAll<HTMLElement>('.town-label').forEach((el) => {
     el.style.setProperty('--dx', '0px');
     el.style.setProperty('--dy', '0px');
     const r = el.getBoundingClientRect();
+    const cx = r.left + r.width / 2;
+    const cy = r.top + r.height / 2;
+    const anchorVisible = cx >= box.left && cx <= box.right && cy >= box.top && cy <= box.bottom - bottomSafe;
+    el.style.visibility = anchorVisible ? '' : 'hidden';
+    if (!anchorVisible) return;
     const dx = Math.max(0, box.left + margin - r.left) + Math.min(0, box.right - margin - r.right);
-    const dy = Math.max(0, box.top + margin - r.top) + Math.min(0, box.bottom - 28 - r.bottom);
+    const dy = Math.max(0, box.top + margin - r.top) + Math.min(0, box.bottom - bottomSafe - r.bottom);
     el.style.setProperty('--dx', `${dx}px`);
     el.style.setProperty('--dy', `${dy}px`);
   });
@@ -73,9 +82,25 @@ export function SpotlightMap() {
         const town = townByCode.get((feature.properties as BoundaryProps).code);
         if (!town) return;
         layersRef.current.set(town.id, layer as L.Path);
-        layer.on('click', () => {
+        const choose = () => {
           if (hasVoiceRef.current(town.id)) dispatch({ type: 'SELECT_TOWN', townId: town.id });
           else dispatch({ type: 'SHOW_NO_VOICE', townId: town.id });
+        };
+        layer.on('click', choose);
+        // キーボードでも町を選べるようにする
+        layer.on('add', () => {
+          const path = (layer as L.Path).getElement();
+          if (!path) return;
+          path.setAttribute('tabindex', '0');
+          path.setAttribute('role', 'button');
+          path.setAttribute('aria-label', town.name);
+          path.addEventListener('keydown', (e) => {
+            const key = (e as KeyboardEvent).key;
+            if (key === 'Enter' || key === ' ') {
+              e.preventDefault();
+              choose();
+            }
+          });
         });
         layer.on('mouseover', () => (layer as L.Path).setStyle({ weight: 3.5 }));
         layer.on('mouseout', () => (layer as L.Path).setStyle(STYLES[looksRef.current.get(town.id) ?? 'initial']));

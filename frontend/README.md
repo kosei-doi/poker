@@ -1,75 +1,46 @@
-# React + TypeScript + Vite
+# 穴場 PoC
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+知られていない町を「穴場」として紹介する PoC。訪れた人の声から AI（今回はモック）が満足度と「行く前に知っていたか」を読み取り、穴場度 = 満足度 − 知名度 を計算して、暗い地図の上で穴場の町だけに光を当てる。
 
-Currently, two official plugins are available:
+- 要件: `docs` ブランチの `docs/requirements-poc.md`
+- 設計: `docs` ブランチの `docs/basic-design.md`
+- 感想・費用・所要時間はサンプル（架空または目安）。バックエンドなし・通信なしで動く
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 起動
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```sh
+npm install
+npm run dev      # http://localhost:5173
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+| コマンド | 内容 |
+| --- | --- |
+| `npm test` | 計算（要件5章）と AI モック5関数・データ制約のテスト（Vitest） |
+| `npm run build` | 型チェック＋本番ビルド（`dist/`） |
+| `npm run preview` | ビルド結果の確認 |
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## デモの手順（約2分）
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+1. 左上の例文ボタン「京都の竹林みたいな所へ友達と」を押す（相談文: 「友達3人で日帰り、京都の竹林みたいな静かなとこ行きたい。予算は1万円くらい」）
+2. 条件のタグ（「京都の竹林 → #竹 #静か #散策」）が出て、大子町・北茨城市が理由付きで1町ずつ暗くなり、3.5秒で常陸太田市・高萩市・日立市に光が当たる
+3. 提案カードの「常陸太田市」を押す → 地図がズームし、1日プランのスポットに番号と線が出る
+4. 「西山の竹林の小径」の「感想を書く」→「デモ用の感想文を入れる」→「送る」（感想文: 「名前も知らなかったけど、竹の小道を独り占めできて最高。また来たい」）
+5. 読み取り結果（満足度5・知らなかった・#竹 #静か）を確認して「この内容で確定」→ 穴場度 1.9 → 2.3 などの変化と、増えたタグが強調される
+6. 「町向けレポートを開く」→ 「知られていない強み」（良い点の上位3・不満・発信文の案）
+7. 右上の「リセット」で初期データに戻る
+
+ほかに試せること: 声のない常陸大宮市を押す（「まだ声が集まっていません」）、条件のタグを押して直す、「富良野みたいなところに友達と」（辞書にない有名地）、「ひとりで日帰り、予算3000円で滝が見たい」（0件と緩め方の案）。
+
+## 構成
 
 ```
+src/
+├── types.ts          型（設計 3章）
+├── data/             町・スポット・声・語彙・有名地辞書・境界（N03 を加工した boundaries.json）
+├── lib/              計算（stats）・1日プラン（plan）・提案カード（candidate）・演出の時刻表（timeline）など
+├── ai/               AnabaAI インターフェースとモック5関数（Claude API に替えるときは ai/index.ts だけ替える）
+├── state/            useReducer + Context、相談と感想の進行役、localStorage
+└── components/       画面
+```
+
+境界データの出典: 「国土数値情報（行政区域データ）」（国土交通省）を加工して作成。再生成は `scripts/build-boundaries.sh`。

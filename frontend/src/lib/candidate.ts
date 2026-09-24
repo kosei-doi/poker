@@ -35,12 +35,21 @@ export function selectFamousEvidence(townVoices: Voice[], matchedTags: Tag[]): V
   return scored[0]?.v ?? null;
 }
 
-/** 根拠の声を引用した理由の文。声がなければ null（声で裏付けられない文は出さない） */
-export function buildReasonText(townVoices: Voice[], quotes: Voice[]): string | null {
-  if (quotes.length === 0) return null;
+/** 引用するときは文末の句点を落とす（『…。』にしない） */
+export function quoteText(evidence: string): string {
+  return evidence.replace(/[。．.]+$/, '');
+}
+
+/**
+ * 根拠の声を引用した理由の文。声がなければ null（声で裏付けられない文は出さない）。
+ * 有名地のたとえで探したときは、似ている理由の裏付けの声（lead）を先に引用して話をつなげる。
+ */
+export function buildReasonText(townVoices: Voice[], quotes: Voice[], lead: Voice | null = null): string | null {
+  const cited = lead ?? quotes[0];
+  if (!cited) return null;
   const n = townVoices.filter((v) => v.known === 'unknown' && v.satisfaction >= 4).length;
-  if (n >= 1) return `知らずに訪れて満足した人が${n}人。『${quotes[0].evidence}』`;
-  return `訪れた人の声:『${quotes[0].evidence}』`;
+  if (n >= 1) return `知らずに訪れて満足した人が${n}人。『${quoteText(cited.evidence)}』`;
+  return `訪れた人の声:『${quoteText(cited.evidence)}』`;
 }
 
 /**
@@ -56,14 +65,20 @@ export function buildCandidateView(townId: TownId, conditions: Conditions | null
   const famous = conditions?.famous ?? null;
   const matchedTags = famous ? famous.tags.filter((t) => townTags.includes(t)) : [];
   const quotes = selectQuotes(townVoices);
+  const famousEvidence = famous ? selectFamousEvidence(townVoices, matchedTags) : null;
   return {
     townId,
     stats,
     summary,
     matchRate: famous ? matchRate(famous.tags, townTags) : null,
     matchedTags,
-    famousEvidence: famous ? selectFamousEvidence(townVoices, matchedTags) : null,
+    famousEvidence,
     quotes,
-    reasonText: buildReasonText(townVoices, quotes),
+    // 理由の文も有名地のたとえに沿った声から引用する。似ている理由の欄と同じ声を二度出さないよう、次点の声を使う
+    reasonText: buildReasonText(
+      townVoices,
+      quotes,
+      famous ? (selectFamousEvidence(townVoices.filter((v) => v !== famousEvidence), matchedTags) ?? famousEvidence) : null,
+    ),
   };
 }

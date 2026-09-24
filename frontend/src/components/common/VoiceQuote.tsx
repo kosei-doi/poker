@@ -1,5 +1,6 @@
 import { useId, useState } from 'react';
 import { dateLabel, KNOWN_LABEL } from '../../lib/format';
+import { quoteText } from '../../lib/candidate';
 import type { Voice } from '../../types';
 
 /** 根拠の声の引用（D2-4）。押すと感想の原文が読める */
@@ -18,7 +19,7 @@ export function VoiceQuote({ voice, highlight = false }: { voice: Voice; highlig
           setOpen((v) => !v);
         }}
       >
-        <span className="text-text">『{voice.evidence}』</span>
+        <span className="text-text">『{quoteText(voice.evidence)}』</span>
         <span className="block mt-1 text-[11px] text-muted">
           満足度 {voice.satisfaction}・{KNOWN_LABEL[voice.known]}・{dateLabel(voice.createdAt)}
           {voice.source === 'user' && <span className="ml-1 text-glow-soft">あなたの声</span>}

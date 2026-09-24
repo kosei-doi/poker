@@ -1,6 +1,6 @@
 import { COMPANION_RULES } from '../../data/dictionaries';
 import { FAMOUS_PLACES } from '../../data/famous';
-import { detectTags } from '../../data/vocab';
+import { detectTags, TAG_DEFS } from '../../data/vocab';
 import { normalizeText } from '../../lib/text';
 import type { Companion, Conditions, FamousPlace, InterpretResult, Stay } from '../../types';
 
@@ -17,6 +17,17 @@ const ALIAS_INDEX: { alias: string; place: FamousPlace }[] = FAMOUS_PLACES.flatM
 const SIMILE = /(みたいな|みたいに|みたいの|っぽい|のような|のように)/;
 const CHUNK_BREAK = /[、。，,.！!？?\s「」『』()（）]/;
 const PARTICLES = /[はがをにでもへとや]/;
+
+const ALL_TAG_WORDS = Object.values(TAG_DEFS)
+  .flatMap((d) => d.words)
+  .sort((a, b) => b.length - a.length);
+
+/** 語が判定語だけでできているか（「海」「竹林」→ true、「ハワイ」「富良野」→ false） */
+function isOnlyTagWords(word: string): boolean {
+  let rest = word;
+  for (const w of ALL_TAG_WORDS) rest = rest.split(w).join('');
+  return rest.length === 0;
+}
 
 function findFamous(text: string): { place: FamousPlace; alias: string } | null {
   for (const { alias, place } of ALIAS_INDEX) if (text.includes(alias)) return { place, alias };
@@ -87,8 +98,13 @@ export function interpretSync(input: string): InterpretResult {
   if (hit) {
     rest = rest.split(hit.alias).join('　');
   } else {
-    unknownFamous = extractSimileTarget(text);
-    if (unknownFamous) rest = rest.split(unknownFamous).join('　');
+    const target = extractSimileTarget(text);
+    // 〇〇が語彙の判定語だけでできている（「海っぽい」「静かな感じ」など）なら、有名地ではなく雰囲気として読む
+    const isMoodWord = target !== null && isOnlyTagWords(target);
+    if (target && !isMoodWord) {
+      unknownFamous = target;
+      rest = rest.split(target).join('　');
+    }
   }
 
   const conditions: Conditions = {

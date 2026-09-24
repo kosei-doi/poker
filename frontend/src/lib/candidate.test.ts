@@ -34,11 +34,16 @@ describe('selectFamousEvidence', () => {
 
 describe('buildReasonText', () => {
   it('知らずに満足した人の数と引用。声がなければ null', () => {
-    const u = voice('s', 5, 'unknown', [], { evidence: '竹が最高' });
+    const u = voice('s', 5, 'unknown', [], { evidence: '竹が最高。' });
     const k = voice('s', 5, 'known', [], { evidence: '良かった' });
     expect(buildReasonText([u, k], [u, k])).toBe('知らずに訪れて満足した人が1人。『竹が最高』');
     expect(buildReasonText([k], [k])).toBe('訪れた人の声:『良かった』');
     expect(buildReasonText([], [])).toBeNull();
+  });
+  it('有名地の裏付けの声があれば、それを先に引用する', () => {
+    const u = voice('s', 5, 'unknown', [], { evidence: 'お寺が良かった' });
+    const lead = voice('s', 4, 'known', ['竹'], { evidence: '竹林が静かだった。' });
+    expect(buildReasonText([u, lead], [u, lead], lead)).toBe('知らずに訪れて満足した人が1人。『竹林が静かだった』');
   });
 });
 
@@ -61,6 +66,8 @@ describe('buildCandidateView', () => {
     expect(v.famousEvidence).toBe(base[1]);
     expect(v.quotes).toEqual([base[2], base[1], base[0]]);
     expect(v.reasonText).toContain('3人');
+    // 理由の文は、似ている理由の欄とは別の、たとえに沿った声を引用する
+    expect(v.reasonText).toContain(base[0].evidence);
   });
 
   it('有名地がなければ一致度と裏付けは null', () => {

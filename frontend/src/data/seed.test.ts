@@ -3,7 +3,7 @@ import { analyzeVoiceSync } from '../ai/mock/analyzeVoice';
 import { interpretSync } from '../ai/mock/interpret';
 import { recommendSync } from '../ai/mock/recommend';
 import { buildCandidateView } from '../lib/candidate';
-import { pointInFeature, type Boundaries } from '../lib/geo';
+import { fitZoom, MIN_PIN_GAP_PX, pixelDistance, pointInFeature, SPOT_FIT, type Boundaries } from '../lib/geo';
 import { round1, passesQuality } from '../lib/stats';
 import { TAGS, type Voice } from '../types';
 import boundariesJson from './boundaries.json';
@@ -156,6 +156,22 @@ describe('データの整合', () => {
       const town = TOWNS.find((t) => t.id === s.townId)!;
       const f = boundaries.features.find((x) => x.properties.code === town.code)!;
       expect(pointInFeature(s.lat, s.lng, f), s.id).toBe(true);
+    }
+  });
+
+  it.each([
+    ['スマホ（375px・地図 50vh）', 375, 406],
+    ['PC（1280×800 の地図部分）', 860, 744],
+  ])('町を選んだときのズームで、スポットの番号ピン同士が %s でも重ならない（D1-4）', (_, width, height) => {
+    for (const t of TOWNS) {
+      const pts = SPOTS.filter((s) => s.townId === t.id).map((s) => [s.lat, s.lng] as [number, number]);
+      if (pts.length < 2) continue;
+      const zoom = fitZoom(pts, { width, height, ...SPOT_FIT });
+      for (let i = 0; i < pts.length; i++) {
+        for (let j = i + 1; j < pts.length; j++) {
+          expect(pixelDistance(pts[i], pts[j], zoom), `${t.id} ${i + 1}-${j + 1}`).toBeGreaterThanOrEqual(MIN_PIN_GAP_PX);
+        }
+      }
     }
   });
 

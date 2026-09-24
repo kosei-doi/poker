@@ -98,6 +98,13 @@ describe('interpret', () => {
     expect(c.moods).toEqual(['海']);
   });
 
+  it('「〇〇っぽい」の〇〇が語彙の言葉なら、有名地ではなく雰囲気として読む', () => {
+    const c = cond('海っぽい所に友達と');
+    expect(c.unknownFamous).toBeNull();
+    expect(c.moods).toEqual(['海']);
+    expect(cond('竹林みたいな静かな所').moods).toEqual(['静か', '竹']);
+  });
+
   it('辞書の有名地は別名でも当たる', () => {
     expect(cond('嵐山の竹林っぽい所').famous?.id).toBe('kyoto-bamboo');
     expect(cond('高千穂峡みたいな所').famous?.id).toBe('takachiho');

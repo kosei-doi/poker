@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 import boundariesJson from '../../data/boundaries.json';
 import { spotsOfTown } from '../../data/spots';
 import { TOWNS, townById } from '../../data/towns';
-import type { Boundaries, BoundaryProps } from '../../lib/geo';
+import { SPOT_FIT, type Boundaries, type BoundaryProps } from '../../lib/geo';
 import { useApp } from '../../state/context';
 import { useSnapshot } from '../../state/selectors';
 import { useReducedMotion } from '../../state/useReducedMotion';
@@ -23,7 +23,7 @@ const STYLES: Record<TownLook, L.PathOptions> = {
   noVoice: { fillColor: '#1e293b', fillOpacity: 0.3, color: '#3b4660', weight: 1 },
   dimmed: { fillColor: '#1e293b', fillOpacity: 0.3, color: '#3b4660', weight: 1 },
   lit: { fillColor: '#fbbf24', fillOpacity: 0.85, color: '#fde68a', weight: 2 },
-  selected: { fillColor: '#fbbf24', fillOpacity: 0.85, color: '#fff7d6', weight: 3 },
+  selected: { fillColor: '#fbbf24', fillOpacity: 0.55, color: '#fff7d6', weight: 3 },
 };
 
 /**
@@ -147,8 +147,8 @@ export function SpotlightMap() {
     if (!group) return;
     group.clearLayers();
     for (const town of TOWNS) {
-      // 選んだ町はスポットの番号と重ならないよう、ズーム中は町名だけにする（一言とタグはパネルに出ている）
-      const lit = state.lit.includes(town.id) && state.selectedTownId !== town.id;
+      // 町を選んでズームしているあいだは、スポットの番号と重ならないよう全町を町名だけにする（一言とタグはパネルに出ている）
+      const lit = state.lit.includes(town.id) && state.selectedTownId === null;
       const html = lit ? litLabelHtml(town.name, state.summaries[town.id]) : plainLabelHtml(town.name);
       L.marker(town.labelPoint, {
         icon: L.divIcon({ html, className: 'leaflet-div-icon-reset', iconSize: undefined }),
@@ -172,18 +172,21 @@ export function SpotlightMap() {
       if (allBoundsRef.current) map.fitBounds(allBoundsRef.current, { padding: [16, 16], animate });
       return;
     }
-    const layer = layersRef.current.get(id) as L.Polygon | undefined;
-    if (layer) {
-      const b = layer.getBounds();
-      if (animate) map.flyToBounds(b, { padding: [24, 24], duration: 0.8 });
-      else map.fitBounds(b, { padding: [24, 24], animate: false });
-    }
     const spots = spotsOfTown(id);
+    // 町全体ではなく、スポットを含む範囲に合わせる（番号と線が重ならないように。町の境界は画面外に出てよい）
+    const layer = layersRef.current.get(id) as L.Polygon | undefined;
+    const target =
+      spots.length > 0 ? L.latLngBounds(spots.map((s) => [s.lat, s.lng] as L.LatLngTuple)).pad(SPOT_FIT.pad) : layer?.getBounds();
+    if (target) {
+      const opts = { padding: [SPOT_FIT.padding, SPOT_FIT.padding] as L.PointTuple, maxZoom: SPOT_FIT.maxZoom };
+      if (animate) map.flyToBounds(target, { ...opts, duration: 0.8 });
+      else map.fitBounds(target, { ...opts, animate: false });
+    }
     if (spots.length > 1) {
-      L.polyline(
-        spots.map((s) => [s.lat, s.lng] as L.LatLngTuple),
-        { color: '#fbbf24', weight: 2.5, dashArray: '6 6', opacity: 0.95, interactive: false },
-      ).addTo(group);
+      // 明るい町の上でも見えるよう、暗い縁取りの上に明るい破線を重ねる
+      const path = spots.map((s) => [s.lat, s.lng] as L.LatLngTuple);
+      L.polyline(path, { color: '#1c1300', weight: 7, opacity: 0.75, interactive: false }).addTo(group);
+      L.polyline(path, { color: '#fff7d6', weight: 3, dashArray: '8 6', opacity: 1, interactive: false }).addTo(group);
     }
     for (const s of spots) {
       const marker = L.marker([s.lat, s.lng], {
@@ -204,10 +207,24 @@ export function SpotlightMap() {
   }, [state.selectedTownId, reduced]);
 
   const noVoiceTown = state.noVoiceTownId ? townById(state.noVoiceTownId) : null;
+  // スマホでは理由の一覧が地図の下（画面外）になるので、演出のあいだは地図の上にも出す（D1-3）
+  const showNarrowingOnMap = state.consultPhase === 'narrowing' && state.narrowingLog.length > 0 && !state.selectedTownId;
 
   return (
     <div className="relative h-full w-full">
       <div ref={elRef} className="h-full w-full" role="region" aria-label="茨城県北の地図" />
+      {showNarrowingOnMap && (
+        <ul
+          aria-hidden
+          className="lg:hidden absolute left-2 bottom-9 z-[1000] max-w-[85%] space-y-1 pointer-events-none"
+        >
+          {state.narrowingLog.map((e) => (
+            <li key={e.townId} className="fade-in rounded-lg bg-panel/90 border border-line px-2.5 py-1 text-xs">
+              <span className="text-muted">{townById(e.townId)?.name}</span> — {e.reason}
+            </li>
+          ))}
+        </ul>
+      )}
       {noVoiceTown && (
         <div
           role="status"

@@ -5,6 +5,7 @@ import { ScoreBadge } from '../common/ScoreBadge';
 import { TagChip } from '../common/TagChip';
 import { VoiceQuote } from '../common/VoiceQuote';
 import { hashTags } from '../../lib/format';
+import { quoteText } from '../../lib/candidate';
 
 interface Props {
   view: CandidateView;
@@ -23,7 +24,7 @@ export function FamousMatch({ view, famous }: { view: CandidateView; famous: Fam
       <p className="font-bold text-glow-soft">{famous.name}に似た体験ができる</p>
       <p className="text-text">
         <span className="font-bold">{hashTags(view.matchedTags)}</span> が一致。
-        {view.famousEvidence && <span>『{view.famousEvidence.evidence}』</span>}
+        {view.famousEvidence && <span>『{quoteText(view.famousEvidence.evidence)}』</span>}
       </p>
     </div>
   );

@@ -1,6 +1,6 @@
 # 穴場 PoC 基本設計書
 
-> **最終更新**: 2026-09-24（v2: 13章を追加。N1〜N5 と B1 の変更、3人での並列実装の分担。レビューを受けて 13.7・13.11 などを更新） / **オーナー**: 土井
+> **最終更新**: 2026-09-24（v2: 13章を追加。13.15 に投稿者ページ（N6）を追記。N1〜N5 と B1 の変更、3人での並列実装の分担。レビューを受けて 13.7・13.11 などを更新） / **オーナー**: 土井
 > **位置づけ**: 暫定（[requirements-poc.md](requirements-poc.md) v2 を実装するための設計。要件が変われば追従する）
 > **スコープ**: `poker` リポジトリ `poc` ブランチの `frontend/`（React + TypeScript + Vite + Tailwind CSS + Leaflet、バックエンドなし）。0〜12章は v1（D1〜D5・B1〜B5）の設計で、実装済み。v2 の追加分（N1〜N5、B1 の変更）は **13章** にまとめ、v1 の章と食い違うところは13章を優先する。要件の内容はここでは繰り返さず、要件定義書の ID（D1-1、N3-2、5章、7.4 など）で参照する。
 
@@ -1371,6 +1371,81 @@ v1 の 10章に加える。画面のテストは引き続き書かず、純関�
 | `data/photos.test.ts` | C | 町6・スポット17のすべてに写真と出典がある、ファイルが実在する、1枚 150KB 以下、WebP のヘッダーから読んだ幅が 1200 以下で `width`/`height` と一致、ライセンスが許可リスト、撮影者・入手元 URL が空でない、同じファイル・同じ入手元を2回使っていない |
 
 - 既存の 126件はすべて通ったままにする（`seed.test.ts` は変更しない）
+
+### 13.15 投稿者ページ（A、N6）
+
+要件 v2 の改訂で N6 が加わり、ナビの「町向けレポート」は「投稿者ページ」に置き換わった（N2-1・N2-2・N4-1）。この節は 13.5・13.8.3 より優先する。
+
+#### 13.15.1 ルートとナビ
+
+- `Page` は `'search' | 'dashboard' | 'partner' | 'about'`（`'report'` をやめる）。ナビのラベルは「投稿者ページ」
+- `Route` の投稿者ページは `{ page: 'partner'; town: TownId | null; tab: PartnerTab }`、`PartnerTab = 'post' | 'reviews' | 'report'`（省略時 `'post'`）。ハッシュは `#/partner?town=hitachiota&tab=reviews`
+- **以前の `#/report`**: `parseHash('#/report?town=X')` は `{ page: 'partner', town: X, tab: 'report' }` を返す。起動時の正規化（13.5）で `#/partner?town=X&tab=report` に置き換わる（N2-2）
+- 「さがす」の町の詳細の「町向けレポートを開く」は `navigate({ page: 'partner', town, tab: 'report' })`（N4-1）
+- `?town=` は声とスポットのデータを持つ5町だけを採る（常陸大宮市などは null）
+
+#### 13.15.2 画面構成（`pages/PartnerPage.tsx`）
+
+| 部品 | 内容 | 要件 |
+| --- | --- | --- |
+| `PartnerTownSelect` | 上部。5町の `<select>`。「PoC のためログインはありません（だれでもどの町でも選べます）」を常に表示。選ぶと `replace` で `?town=` を更新 | N6-1 |
+| タブ | `role="tablist"` の3つ（投稿する／レビュー／町向けレポート）。矢印キーで移動。選ぶと `replace` で `?tab=` を更新。町が未選択なら「町を選んでください」だけを出す | N6-1 |
+| `SpotPostForm`（投稿する） | 名前・種類・説明・滞在時間・費用の目安・場所・写真の入力と投稿。下に、この町で投稿したスポットの一覧（`PostedSpotList`、取り消しボタン付き） | N6-2・N6-3 |
+| `ReviewList`（レビュー） | 選んだ町の声（初期の声＋利用者の声）を新しい順。上部に件数（絞り込み後 / 全体）。絞り込み: スポット（投稿したスポットを含む）・満足度（1〜5 の複数選択）・知っていたか（3択の複数選択） | N6-4 |
+| `ReportView`（町向けレポート） | 13.8.3 の中身をそのまま（1.5秒待って `buildReport`） | N4-1・D3-1 |
+
+#### 13.15.3 投稿のフォーム（N6-2）
+
+| 項目 | 入力 | 必須・検証 |
+| --- | --- | --- |
+| 名前 | テキスト | 必須。1〜30字。同じ町の既存のスポット・投稿と同名は不可 |
+| 種類 | 食べる／見る／体験（ラジオ） | 必須 |
+| 説明 | テキストエリア | 必須。1〜120字 |
+| 滞在時間（分） | 数値 | 必須。10〜600 の整数 |
+| 費用の目安（円・1人） | 数値 | 必須。0〜100000 の整数（0 は無料） |
+| 場所 | 小さな地図（`LocationPicker`）を押す | 必須。町の境界の内側だけ（外を押すと「町の境界の外は選べません」と出して置かない） |
+| 写真 | 種類に合う N5 の写真から選ぶ（`PostPhotoPicker`） | 必須。種類を選ぶまでは選べない。種類を変えたら選び直し |
+
+- 投稿ボタンを押したとき、足りない・誤っている項目をフォームの上に一覧し（各項目へのリンク付き）、各項目の下にも理由を出す（`aria-invalid`・`aria-describedby`）。最初の誤りにフォーカスを移す
+- 検証は純関数 `validatePost(draft, context): { ok: true; spot } | { ok: false; errors: Record<Field, string> }`（`lib/partner.ts`）。テストする
+- 写真は「種類が同じ既存スポットの写真」から選ぶ。持ち方は `photoSpotId`（その写真を持つ既存スポットの id）で、表示は C の `<SpotPhoto spotId={photoSpotId}>` を使う（写真ファイルを複製しない）
+- `LocationPicker`（A の新しい部品。B の地図のファイルは変えない）: Leaflet の小さな地図（高さ 240px、タイルなし）。`boundaries.json` から選んだ町の図形だけを描いて `fitBounds`。押した点が `pointInFeature`（`lib/geo.ts`、読むだけ）で内側なら印を置く。キーボード向けに「町の中心に置く」ボタンを添える（中心は `Town.labelPoint`）
+- 投稿すると、フォームを空にし、「投稿しました。『さがす』の{町名}の詳細に出ます」と `さがすで見る` リンク（`#/search?town=…`）を出す
+
+#### 13.15.4 データの持ち方（N6-3・N6-5）
+
+```ts
+// lib/partner.ts（A）
+export interface PostedSpot extends Spot {
+  posted: true;
+  photoSpotId: SpotId;      // 写真を借りる既存スポット
+  createdAt: string;        // ISO 8601
+}
+export const POSTED_ID_PREFIX = 'posted-';  // id は 'posted-<時刻36進>-<乱数>'
+export function allSpots(posted: PostedSpot[]): Spot[];            // SPOTS ＋ 投稿
+export function findSpot(id: SpotId, posted: PostedSpot[]): Spot | undefined;
+export function isPosted(spot: Spot): spot is PostedSpot;
+export function validatePost(…): …;                                // 13.15.3
+```
+
+- `AppState.postedSpots: PostedSpot[]`、Action `POST_SPOT` / `REMOVE_POSTED_SPOT`。`anaba-poc/v1/postedSpots` に保存し、リセットで消す（`useReset` に `clearPostedSpots` を足す）
+- 読み込み時の検証: 必須項目と型、町が5町のどれか、座標が町の境界の内側、`photoSpotId` が同じ種類の既存スポット、id の重複なし。満たさないものは捨てる
+- 起動時の読み込み順: 投稿したスポット → 利用者の声（声の `spotId` の照合に、投稿したスポットの id も含める）
+- **スポットの一覧への合流**: `useSnapshot()` の `spots` を `allSpots(postedSpots)` にする。これで投稿したスポットに書かれた声も、スポット・町の点数と町の一言とタグ（`summarizeAll` にも同じ一覧を渡す）に入る
+- **1日プランには入れない**: `buildDayPlan` に渡すのは v1 の `spotsOfTown(townId)`（`data/spots.ts`、投稿を含まない）のまま。B の地図の番号と線も v1 のスポットだけ
+- **町の詳細**（`TownPanel`）: v1 のスポット一覧の下に「町からの投稿」の見出しで投稿したスポットを並べる。各行に「町からの投稿」の印、写真（`photoSpotId` の写真）、説明・滞在時間・費用、点数の代わりに「まだ声がありません」（声が付いたら v1 と同じく穴場度と n= と参考値）、「感想を書く」（D2 の流れをそのまま使う。`useVoiceFlow`・`VoiceModal` のスポットの検索を `findSpot` に替える）
+- **取り消し**: 投稿者ページの一覧の「取り消す」→ 確認（そのスポットに声があれば「声 n 件も一緒に消えます」）→ `REMOVE_POSTED_SPOT`。そのスポットに書かれた利用者の声も一緒に消す（どのスポットにも属さない声を残さないため）。町の一言とタグは作り直す
+- **「さがす」の地図に投稿したスポットを出す部分**（N6-3 の後半）は、B の `SpotlightMap` に触れるので、担当A・B の実装の統合（merge）の段階で行う。そのとき地図は `postedSpots` を読み、番号なしの「投」の印（線でつながない）で出す
+
+#### 13.15.5 テスト
+
+| ファイル | テストすること |
+| --- | --- |
+| `lib/route.test.ts`（追加） | `#/partner` と `?tab=`、未知の tab は `'post'`、`#/report?town=X` → partner の report タブ、往復 |
+| `lib/partner.test.ts` | `validatePost`（各項目の空・範囲外・同名・境界の外・種類と写真の不一致・正常）、`allSpots`・`findSpot`・`isPosted` |
+| `lib/storage.test.ts`（追加） | 投稿したスポットの保存・読み込み・不正な値（境界の外・未知の町・写真の種類違い）を捨てる・例外 |
+| `state/reducer.test.ts`（追加） | `POST_SPOT`、`REMOVE_POSTED_SPOT` でそのスポットの声も消える、`RESET` で消える |
+| `lib/reviews.test.ts` | レビュー一覧の純関数（町の声だけ・新しい順・スポット／満足度／知っていたかの絞り込み・件数） |
 
 ### 13.14 v2 の未決事項
 

@@ -6,6 +6,7 @@ import { buildNarrowingTimeline, CONDITIONS_AT, type TimelineEvent } from '../li
 import type { Conditions } from '../types';
 import { useApp } from './context';
 import { newId } from './ids';
+import { isKenpokuReady, waitKenpokuReady } from './mapEvents';
 import type { Action } from './reducer';
 import { useSnapshot } from './selectors';
 import { useReducedMotion } from './useReducedMotion';
@@ -33,7 +34,9 @@ function eventToAction(ev: TimelineEvent): Action | null {
 
 /** 相談の送信〜光が当たるまでの進行（B1〜B3・D1-3。設計 6.2） */
 export function useConsultFlow() {
-  const { dispatch, tasks } = useApp();
+  const { state, dispatch, tasks } = useApp();
+  const mapViewRef = useRef(state.mapView);
+  mapViewRef.current = state.mapView;
   const snap = useSnapshot();
   const snapRef = useRef(snap);
   snapRef.current = snap;
@@ -71,15 +74,34 @@ export function useConsultFlow() {
     [dispatch],
   );
 
+  /**
+   * 日本全体を表示中なら県北へ切り替える（N1-2）。ズームの完了を待つ必要があれば false を返す。
+   * 地図の状態は dispatch の直後に同期で見る（地図はまだ動き出していないので、日本全体なら待つことになる）
+   */
+  const showKenpoku = useCallback((): boolean => {
+    if (mapViewRef.current === 'japan') dispatch({ type: 'SET_MAP_VIEW', view: 'kenpoku' });
+    return isKenpokuReady();
+  }, [dispatch]);
+
   const send = useCallback(
     async (text: string) => {
       const trimmed = text.trim();
       if (!trimmed) return;
       const signal = tasks.start('consult');
-      const t0 = performance.now();
+      const s0 = performance.now();
       dispatch({ type: 'START_CONSULT', message: { id: newId('m'), role: 'user', text: trimmed } });
+      const ready = showKenpoku();
+      // interpret はズームと同時に始める（Claude API に替えたとき、待ち時間をズームで隠せる）
+      const interpretP = ai.interpret(trimmed);
+      interpretP.catch(() => {}); // 途中で止めたときの unhandled rejection を防ぐ（結果は下で await する）
       try {
-        const [result] = await Promise.all([ai.interpret(trimmed), sleep(CONDITIONS_AT, signal)]);
+        // 時刻表の起点 t0 は、ズームが終わった時刻（すでに県北なら送信時刻）
+        if (!ready) await waitKenpokuReady(signal);
+        const t0 = ready ? s0 : performance.now();
+        const [result] = await Promise.all([
+          interpretP,
+          sleep(Math.max(0, CONDITIONS_AT - (performance.now() - t0)), signal),
+        ]);
         if (signal.aborted) return;
         if (result.kind === 'clarify') {
           dispatch({ type: 'CLARIFY', message: aiMessage(result.question) });
@@ -90,20 +112,23 @@ export function useConsultFlow() {
         if (!isAbortError(e)) throw e;
       }
     },
-    [dispatch, narrow, tasks],
+    [dispatch, narrow, showKenpoku, tasks],
   );
 
   /** 条件タグを直したとき（B2）。条件の読み取りはやり直さない */
   const rerun = useCallback(
     async (conditions: Conditions) => {
       const signal = tasks.start('consult');
+      // 日本全体を見ているあいだに条件を直したときも、県北へズームしてから結果を見せる
+      const ready = showKenpoku();
       try {
+        if (!ready) await waitKenpokuReady(signal);
         await narrow(conditions, performance.now(), 'rerun', signal);
       } catch (e) {
         if (!isAbortError(e)) throw e;
       }
     },
-    [narrow, tasks],
+    [narrow, showKenpoku, tasks],
   );
 
   return { send, rerun };

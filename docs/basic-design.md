@@ -1,6 +1,6 @@
 # 穴場 PoC 基本設計書
 
-> **最終更新**: 2026-09-24（v2: 13章を追加。13.15 に投稿者ページ（N6）を追記。N1〜N5 と B1 の変更、3人での並列実装の分担。レビューを受けて 13.7・13.11 などを更新） / **オーナー**: 土井
+> **最終更新**: 2026-09-24（v2: 13章を追加。13.15 に投稿者ページ（N6）、13.16 にダッシュボード（N7）を追記。N1〜N5 と B1 の変更、3人での並列実装の分担。レビューを受けて 13.7・13.11 などを更新） / **オーナー**: 土井
 > **位置づけ**: 暫定（[requirements-poc.md](requirements-poc.md) v2 を実装するための設計。要件が変われば追従する）
 > **スコープ**: `poker` リポジトリ `poc` ブランチの `frontend/`（React + TypeScript + Vite + Tailwind CSS + Leaflet、バックエンドなし）。0〜12章は v1（D1〜D5・B1〜B5）の設計で、実装済み。v2 の追加分（N1〜N5、B1 の変更）は **13章** にまとめ、v1 の章と食い違うところは13章を優先する。要件の内容はここでは繰り返さず、要件定義書の ID（D1-1、N3-2、5章、7.4 など）で参照する。
 
@@ -1446,6 +1446,56 @@ export function validatePost(…): …;                                // 13.15.
 | `lib/storage.test.ts`（追加） | 投稿したスポットの保存・読み込み・不正な値（境界の外・未知の町・写真の種類違い）を捨てる・例外 |
 | `state/reducer.test.ts`（追加） | `POST_SPOT`、`REMOVE_POSTED_SPOT` でそのスポットの声も消える、`RESET` で消える |
 | `lib/reviews.test.ts` | レビュー一覧の純関数（町の声だけ・新しい順・スポット／満足度／知っていたかの絞り込み・件数） |
+
+### 13.16 ダッシュボード（A、N7）とマイページへの改名
+
+要件の改訂で N7 が加わった。旧ダッシュボード（N3）は「マイページ」に改名する。この節は 13.2・13.5・13.6・13.8.1 より優先する。
+
+#### 13.16.1 ルートとナビ
+
+- `Page` は `'dashboard' | 'search' | 'mypage' | 'partner' | 'about'`。ナビはこの順の5項目（N2-1）。ロゴのリンク先はダッシュボード
+- **ハッシュがないとき（`''`・`'#'`・`'#/'`）はダッシュボード**（N2-2）。未知のページは従来どおり「さがす」
+- 旧ダッシュボードのファイルは `pages/MyPage.tsx`・`components/mypage/*`・`lib/mypage.ts`（`#/mypage`）に移す。中身は 13.8.1 のまま、見出しを「マイページ」にする
+- 5項目が1行に収まらない幅（< 1024px）はメニューボタンにする（375px の N2-3 を含む）。「サンプルデータ」バッジは ≥ 1280px だけヘッダーに出し、それ未満はメニューの中
+
+#### 13.16.2 データ（`lib/showcase.ts`、純関数）
+
+```ts
+export const SHOWCASE_INTERVAL_MS = 6000;
+export function showcaseTags(summaries: Record<TownId, TownSummary>): Tag[];   // 町のタグに1町以上あるタグを TAGS の順（N7-2）
+export interface ShowcaseRow {
+  town: Town; summary: TownSummary; stats: TownStats;
+  tagCount: number;                 // そのタグの元になった声の件数（summary.tags の count）
+  evidence: Voice | null;           // そのタグを含む根拠の声1件（D2-4 の選び方をそのタグの声に当てる）
+  spots: { spot: Spot; count: number }[]; // そのタグを持つスポット 1〜3件（満足度4以上の声でそのタグを含む件数の多い順）
+}
+export function showcaseRows(tag: Tag, data: DataSnapshot): ShowcaseRow[];    // 今のタグを持つ町を穴場度の高い順（同じなら towns の順）
+export function stepIndex(index: number, length: number, dir: 1 | -1): number; // 端で折り返す
+```
+
+- スポットは投稿したスポットも含む（`DataSnapshot.spots` を使う）
+
+#### 13.16.3 画面（`pages/DashboardPage.tsx`）
+
+| 部品 | 内容 | 要件 |
+| --- | --- | --- |
+| 見出し | 今のタグを大きく「#海鮮 の穴場」。`aria-live="polite"` | N7-1 |
+| `ShowcaseControls` | 前へ・次へ・一時停止/再生（`aria-pressed`）、状態の表示（「自動で切り替え中（6秒ごと）」「一時停止中」「マウス・フォーカスがあるあいだ停止中」）、タグの一覧（押すとそのタグへ。今のタグは `aria-current` と強調） | N7-4 |
+| `DashboardMap`（A の新しい部品。B の地図のファイルは変えない） | 県北6市町の Leaflet 地図（タイルなし、D1-1 と同じ暗い塗り分け）。今のタグを持つ町だけ D1-2 の光る表現、ほかは暗く。光った町に町名のラベル。町を押す（Enter でも）と `#/search?town=…` | N7-1・N7-2・N7-5 |
+| `ShowcaseList` | `ShowcaseRow` の一覧。各行に町の写真（C の `<TownPhoto size="thumb">`。統合までは差し込み口 `renderTownThumb`）・町名・一言・穴場度とラベル・件数・「#海鮮 の声 n件」・根拠の声1件・スポット名1〜3件。行を押すと「さがす」でその町 | N7-3・N7-5 |
+| 「さがすで相談する」 | `#/search` へのボタン | N7-5 |
+
+- 配置: PC は左に地図（残り幅）、右にリスト（幅 440px）。スマホは地図（高さ 40vh）が上、リストが下
+- **自動の切り替え**: `setTimeout(SHOWCASE_INTERVAL_MS)` で次のタグへ。止める条件は「一時停止ボタン」「地図かリストにマウスが乗っている」「地図かリストの中にフォーカスがある」のどれか。止める条件がなくなったら、そこから改めて6秒数える
+- **値の更新（N7-7）**: 表示中の行は、切り替えた時点の `useSnapshot()` から作って固定する（表示の途中で並びが変わらない）。声の確定や投稿があれば、次の切り替えで新しい値になる。タグは名前で持ち、タグの一覧が変わっても今のタグを保つ（なくなったら最初のタグへ）
+- **動きを減らす設定（N7-6）**: フェードをなくす（地図の色の transition も付けない）。自動の切り替えは続ける
+
+#### 13.16.4 テスト
+
+| ファイル | テストすること |
+| --- | --- |
+| `lib/route.test.ts`（追加） | ハッシュなし → ダッシュボード、`#/mypage`、5ページの往復 |
+| `lib/showcase.test.ts` | タグの一覧（語彙の順・1町以上）、行の並び（穴場度の高い順）、tagCount、根拠の声（そのタグを含む・D2-4 の順）、スポット（件数順・最大3・投稿スポットを含む）、`stepIndex` の折り返し |
 
 ### 13.14 v2 の未決事項
 

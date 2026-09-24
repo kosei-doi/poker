@@ -1,0 +1,382 @@
+[
+  {
+    "id": "town-hitachiota",
+    "target": {
+      "kind": "town",
+      "id": "hitachiota"
+    },
+    "file": "town-hitachiota.webp",
+    "width": 1200,
+    "height": 800,
+    "bytes": 145944,
+    "title": "ニホンの竹林IMG 0865",
+    "author": "キクチサヨコ",
+    "authorUrl": "https://ja.wikipedia.org/wiki/user:%E3%82%AD%E3%82%AF%E3%83%81%E3%82%B5%E3%83%A8%E3%82%B3",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:%E3%83%8B%E3%83%9B%E3%83%B3%E3%81%AE%E7%AB%B9%E6%9E%97IMG_0865.jpg",
+    "license": "Public domain",
+    "licenseUrl": "https://commons.wikimedia.org/wiki/Help:Public_domain",
+    "changes": "リサイズ・3:2 に切り抜き・WebP に変換",
+    "retrievedAt": "2026-09-24"
+  },
+  {
+    "id": "town-takahagi",
+    "target": {
+      "kind": "town",
+      "id": "takahagi"
+    },
+    "file": "town-takahagi.webp",
+    "width": 960,
+    "height": 640,
+    "bytes": 145184,
+    "title": "Nakatsu in Autumn",
+    "author": "Yones",
+    "authorUrl": null,
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Nakatsu_in_Autumn.JPG",
+    "license": "Public domain",
+    "licenseUrl": "https://commons.wikimedia.org/wiki/Help:Public_domain",
+    "changes": "リサイズ・3:2 に切り抜き・WebP に変換",
+    "retrievedAt": "2026-09-24"
+  },
+  {
+    "id": "town-kitaibaraki",
+    "target": {
+      "kind": "town",
+      "id": "kitaibaraki"
+    },
+    "file": "town-kitaibaraki.webp",
+    "width": 1200,
+    "height": 800,
+    "bytes": 25328,
+    "title": "Tomiuracho Toyooka, Minamiboso, Chiba Prefecture 299-2402, Japan - panoramio (6)",
+    "author": "ESU",
+    "authorUrl": "https://web.archive.org/web/20161025111431/http://www.panoramio.com/user/4944616?with_photo_id=85062771",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Tomiuracho_Toyooka,_Minamiboso,_Chiba_Prefecture_299-2402,_Japan_-_panoramio_(6).jpg",
+    "license": "CC BY 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/3.0",
+    "changes": "リサイズ・3:2 に切り抜き・WebP に変換",
+    "retrievedAt": "2026-09-24"
+  },
+  {
+    "id": "town-hitachiomiya",
+    "target": {
+      "kind": "town",
+      "id": "hitachiomiya"
+    },
+    "file": "town-hitachiomiya.webp",
+    "width": 960,
+    "height": 640,
+    "bytes": 140378,
+    "title": "ヒノキ人工林のある里山P7306340",
+    "author": "Akiyoshi's Room",
+    "authorUrl": "https://ja.wikipedia.org/wiki/user:Akiyoshi%27s_Room",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:%E3%83%92%E3%83%8E%E3%82%AD%E4%BA%BA%E5%B7%A5%E6%9E%97%E3%81%AE%E3%81%82%E3%82%8B%E9%87%8C%E5%B1%B1P7306340.jpg",
+    "license": "CC BY 2.5",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.5",
+    "changes": "リサイズ・3:2 に切り抜き・WebP に変換",
+    "retrievedAt": "2026-09-24"
+  },
+  {
+    "id": "town-daigo",
+    "target": {
+      "kind": "town",
+      "id": "daigo"
+    },
+    "file": "town-daigo.webp",
+    "width": 960,
+    "height": 640,
+    "bytes": 144634,
+    "title": "091025中野白滝（秋） - panoramio",
+    "author": "re-kuma",
+    "authorUrl": "https://web.archive.org/web/20161014015834/http://www.panoramio.com/user/3138370?with_photo_id=28190157",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:091025%E4%B8%AD%E9%87%8E%E7%99%BD%E6%BB%9D%EF%BC%88%E7%A7%8B%EF%BC%89_-_panoramio.jpg",
+    "license": "CC BY 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/3.0",
+    "changes": "リサイズ・3:2 に切り抜き・WebP に変換",
+    "retrievedAt": "2026-09-24"
+  },
+  {
+    "id": "spot-hitachiota-bamboo",
+    "target": {
+      "kind": "spot",
+      "id": "hitachiota-bamboo"
+    },
+    "file": "spot-hitachiota-bamboo.webp",
+    "width": 1080,
+    "height": 720,
+    "bytes": 143832,
+    "title": "Bamboo @ Trail from Yugawara station to Mount Shiro (11166825935)",
+    "author": "Guilhem Vellut from Annecy, France",
+    "authorUrl": "https://www.flickr.com/people/22539273@N00",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bamboo_@_Trail_from_Yugawara_station_to_Mount_Shiro_(11166825935).jpg",
+    "license": "CC BY 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+    "changes": "リサイズ・3:2 に切り抜き・WebP に変換",
+    "retrievedAt": "2026-09-24"
+  },
+  {
+    "id": "spot-hitachiota-kujiragaoka",
+    "target": {
+      "kind": "spot",
+      "id": "hitachiota-kujiragaoka"
+    },
+    "file": "spot-hitachiota-kujiragaoka.webp",
+    "width": 1200,
+    "height": 800,
+    "bytes": 65490,
+    "title": "有松 - panoramio - gundam2345 (5)",
+    "author": "gundam2345",
+    "authorUrl": "https://web.archive.org/web/20161013203951/http://www.panoramio.com/user/2284372?with_photo_id=23299404",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:%E6%9C%89%E6%9D%BE_-_panoramio_-_gundam2345_(5).jpg",
+    "license": "CC BY 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/3.0",
+    "changes": "リサイズ・3:2 に切り抜き・WebP に変換",
+    "retrievedAt": "2026-09-24"
+  },
+  {
+    "id": "spot-hitachiota-soba",
+    "target": {
+      "kind": "spot",
+      "id": "hitachiota-soba"
+    },
+    "file": "spot-hitachiota-soba.webp",
+    "width": 1200,
+    "height": 800,
+    "bytes": 134864,
+    "title": "三咲のざるそば (54178345476)",
+    "author": "Ryohei Noda",
+    "authorUrl": null,
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:%E4%B8%89%E5%92%B2%E3%81%AE%E3%81%96%E3%82%8B%E3%81%9D%E3%81%B0_(54178345476).jpg",
+    "license": "CC BY 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+    "changes": "リサイズ・3:2 に切り抜き・WebP に変換",
+    "retrievedAt": "2026-09-24"
+  },
+  {
+    "id": "spot-hitachiota-temple",
+    "target": {
+      "kind": "spot",
+      "id": "hitachiota-temple"
+    },
+    "file": "spot-hitachiota-temple.webp",
+    "width": 960,
+    "height": 640,
+    "bytes": 149120,
+    "title": "Honsen-ji Temple Main Gate and Stone Steps(本泉寺山門・石段)",
+    "author": "Koshinami",
+    "authorUrl": "https://commons.wikimedia.org/w/index.php?title=User:Koshinami&action=edit&redlink=1",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Honsen-ji_Temple_Main_Gate_and_Stone_Steps(%E6%9C%AC%E6%B3%89%E5%AF%BA%E5%B1%B1%E9%96%80%E3%83%BB%E7%9F%B3%E6%AE%B5).jpg",
+    "license": "CC0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "changes": "リサイズ・3:2 に切り抜き・WebP に変換",
+    "retrievedAt": "2026-09-24"
+  },
+  {
+    "id": "spot-takahagi-hananuki",
+    "target": {
+      "kind": "spot",
+      "id": "takahagi-hananuki"
+    },
+    "file": "spot-takahagi-hananuki.webp",
+    "width": 1200,
+    "height": 800,
+    "bytes": 138778,
+    "title": "Tabisoko bridge",
+    "author": "User:手練",
+    "authorUrl": "https://commons.wikimedia.org/w/index.php?title=User:%E6%89%8B%E7%B7%B4&action=edit&redlink=1",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Tabisoko_bridge.JPG",
+    "license": "Public domain",
+    "licenseUrl": "https://commons.wikimedia.org/wiki/Help:Public_domain",
+    "changes": "リサイズ・3:2 に切り抜き・WebP に変換",
+    "retrievedAt": "2026-09-24"
+  },
+  {
+    "id": "spot-takahagi-trail",
+    "target": {
+      "kind": "spot",
+      "id": "takahagi-trail"
+    },
+    "file": "spot-takahagi-trail.webp",
+    "width": 840,
+    "height": 560,
+    "bytes": 143446,
+    "title": "Todoroki Valley - Tokyo, Japan - DSC09464",
+    "author": "Daderot",
+    "authorUrl": "https://commons.wikimedia.org/wiki/User:Daderot",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Todoroki_Valley_-_Tokyo,_Japan_-_DSC09464.jpg",
+    "license": "CC0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "changes": "リサイズ・3:2 に切り抜き・WebP に変換",
+    "retrievedAt": "2026-09-24"
+  },
+  {
+    "id": "spot-takahagi-diner",
+    "target": {
+      "kind": "spot",
+      "id": "takahagi-diner"
+    },
+    "file": "spot-takahagi-diner.webp",
+    "width": 1200,
+    "height": 800,
+    "bytes": 52308,
+    "title": "Korroke teishoku of drive-in oasis May 2026",
+    "author": "Chacmool",
+    "authorUrl": "https://commons.wikimedia.org/wiki/User:Chacmool",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Korroke_teishoku_of_drive-in_oasis_May_2026.jpg",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+    "changes": "リサイズ・3:2 に切り抜き・WebP に変換",
+    "retrievedAt": "2026-09-24"
+  },
+  {
+    "id": "spot-hitachi-oiwa",
+    "target": {
+      "kind": "spot",
+      "id": "hitachi-oiwa"
+    },
+    "file": "spot-hitachi-oiwa.webp",
+    "width": 1080,
+    "height": 720,
+    "bytes": 144838,
+    "title": "Izumo Fukutoku Shrine - Mar 27, 2018",
+    "author": "clvs7",
+    "authorUrl": null,
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Izumo_Fukutoku_Shrine_-_Mar_27,_2018.jpg",
+    "license": "CC0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "changes": "リサイズ・3:2 に切り抜き・WebP に変換",
+    "retrievedAt": "2026-09-24"
+  },
+  {
+    "id": "spot-hitachi-cafe",
+    "target": {
+      "kind": "spot",
+      "id": "hitachi-cafe"
+    },
+    "file": "spot-hitachi-cafe.webp",
+    "width": 1200,
+    "height": 800,
+    "bytes": 81300,
+    "title": "Upstairs window in Coast Cafe, Worthing 2026-05-25",
+    "author": "Andy Li",
+    "authorUrl": "https://commons.wikimedia.org/wiki/User:Onthewings",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Upstairs_window_in_Coast_Cafe,_Worthing_2026-05-25.jpg",
+    "license": "CC0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "changes": "リサイズ・3:2 に切り抜き・WebP に変換",
+    "retrievedAt": "2026-09-24"
+  },
+  {
+    "id": "spot-kitaibaraki-izura",
+    "target": {
+      "kind": "spot",
+      "id": "kitaibaraki-izura"
+    },
+    "file": "spot-kitaibaraki-izura.webp",
+    "width": 960,
+    "height": 640,
+    "bytes": 145320,
+    "title": "Bokido of Hotel Urashima02s4s3960",
+    "author": "663highland",
+    "authorUrl": "https://ja.wikipedia.org/wiki/user:663highland",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bokido_of_Hotel_Urashima02s4s3960.jpg",
+    "license": "CC BY 2.5",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.5",
+    "changes": "リサイズ・3:2 に切り抜き・WebP に変換",
+    "retrievedAt": "2026-09-24"
+  },
+  {
+    "id": "spot-kitaibaraki-anko",
+    "target": {
+      "kind": "spot",
+      "id": "kitaibaraki-anko"
+    },
+    "file": "spot-kitaibaraki-anko.webp",
+    "width": 1200,
+    "height": 800,
+    "bytes": 71190,
+    "title": "Goccojiru",
+    "author": "タクナワン",
+    "authorUrl": "https://commons.wikimedia.org/w/index.php?title=User:%E3%82%BF%E3%82%AF%E3%83%8A%E3%83%AF%E3%83%B3&action=edit&redlink=1",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Goccojiru.jpg",
+    "license": "CC0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "changes": "リサイズ・3:2 に切り抜き・WebP に変換",
+    "retrievedAt": "2026-09-24"
+  },
+  {
+    "id": "spot-kitaibaraki-onsen",
+    "target": {
+      "kind": "spot",
+      "id": "kitaibaraki-onsen"
+    },
+    "file": "spot-kitaibaraki-onsen.webp",
+    "width": 1200,
+    "height": 800,
+    "bytes": 85800,
+    "title": "Togo Onsen07bs4592",
+    "author": "663highland",
+    "authorUrl": "https://ja.wikipedia.org/wiki/user:663highland",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Togo_Onsen07bs4592.jpg",
+    "license": "CC BY 2.5",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.5",
+    "changes": "リサイズ・3:2 に切り抜き・WebP に変換",
+    "retrievedAt": "2026-09-24"
+  },
+  {
+    "id": "spot-daigo-fukuroda",
+    "target": {
+      "kind": "spot",
+      "id": "daigo-fukuroda"
+    },
+    "file": "spot-daigo-fukuroda.webp",
+    "width": 1200,
+    "height": 800,
+    "bytes": 144604,
+    "title": "Waterfall in forest",
+    "author": "Martin Eklund",
+    "authorUrl": "https://commons.wikimedia.org/wiki/User:Teadrinker",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Waterfall_in_forest.jpg",
+    "license": "CC0",
+    "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "changes": "リサイズ・3:2 に切り抜き・WebP に変換",
+    "retrievedAt": "2026-09-24"
+  },
+  {
+    "id": "spot-daigo-soba",
+    "target": {
+      "kind": "spot",
+      "id": "daigo-soba"
+    },
+    "file": "spot-daigo-soba.webp",
+    "width": 1200,
+    "height": 800,
+    "bytes": 61606,
+    "title": "Towari soba by shibainu in Ryogoku, Tokyo",
+    "author": "shibainu from Soba restaurant Tamaya near the Ryōgoku Station , Sumida, Tokyo",
+    "authorUrl": "https://www.flickr.com/photos/shibainu/",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Towari_soba_by_shibainu_in_Ryogoku,_Tokyo.jpg",
+    "license": "CC BY 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+    "changes": "リサイズ・3:2 に切り抜き・WebP に変換",
+    "retrievedAt": "2026-09-24"
+  },
+  {
+    "id": "spot-daigo-onsen",
+    "target": {
+      "kind": "spot",
+      "id": "daigo-onsen"
+    },
+    "file": "spot-daigo-onsen.webp",
+    "width": 1080,
+    "height": 720,
+    "bytes": 141286,
+    "title": "コタン温泉露天風呂 - panoramio",
+    "author": "y.moroi",
+    "authorUrl": "https://web.archive.org/web/20161103011114/http://www.panoramio.com/user/3311385?with_photo_id=41958228",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:%E3%82%B3%E3%82%BF%E3%83%B3%E6%B8%A9%E6%B3%89%E9%9C%B2%E5%A4%A9%E9%A2%A8%E5%91%82_-_panoramio.jpg",
+    "license": "CC BY 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/3.0",
+    "changes": "リサイズ・3:2 に切り抜き・WebP に変換",
+    "retrievedAt": "2026-09-24"
+  }
+]

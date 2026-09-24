@@ -1,12 +1,15 @@
 import { AlertTriangle, Footprints } from 'lucide-react';
 import { yen } from '../../lib/format';
 import type { DayPlan as Plan } from '../../lib/plan';
+import { PhotoListNote } from '../photo/PhotoListNote';
+import { SpotPhoto } from '../photo/SpotPhoto';
 
 /** 1日プラン（B4） */
 export function DayPlan({ plan, budgetYen, roundTripYen }: { plan: Plan; budgetYen: number | null; roundTripYen: number }) {
   return (
     <section aria-label={plan.title} className="space-y-2">
       <h3 className="text-sm font-bold">{plan.title}</h3>
+      <PhotoListNote />
       <ol className="space-y-0">
         {plan.rows.map((r, i) => (
           <li key={r.spot.id}>
@@ -14,6 +17,7 @@ export function DayPlan({ plan, budgetYen, roundTripYen }: { plan: Plan; budgetY
               <span className="grid place-items-center size-6 shrink-0 rounded-full bg-glow text-[#1c1300] text-xs font-extrabold">
                 {i + 1}
               </span>
+              <SpotPhoto spotId={r.spot.id} size="thumb" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm">
                   <span className="font-bold tabular-nums mr-2">{r.start}</span>

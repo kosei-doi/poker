@@ -5,6 +5,7 @@ describe('parseHash', () => {
   it.each([
     ['#/search', { page: 'search', town: null }],
     ['#/dashboard', { page: 'dashboard' }],
+    ['#/mypage', { page: 'mypage' }],
     ['#/partner', { page: 'partner', town: null, tab: 'post' }],
     ['#/about', { page: 'about' }],
     ['#/about/', { page: 'about' }],
@@ -12,7 +13,11 @@ describe('parseHash', () => {
     expect(parseHash(hash)).toEqual(route);
   });
 
-  it.each(['', '#', '#/', '#/unknown', '#/search/extra/'])('空・未知のページ「%s」は「さがす」', (hash) => {
+  it.each(['', '#', '#/'])('ハッシュがない「%s」はダッシュボード（最初に開く画面）', (hash) => {
+    expect(parseHash(hash)).toEqual({ page: 'dashboard' });
+  });
+
+  it.each(['#/unknown', '#/search/extra/'])('未知のページ「%s」は「さがす」', (hash) => {
     expect(parseHash(hash).page).toBe('search');
   });
 
@@ -49,6 +54,7 @@ describe('toHash', () => {
     { page: 'search', town: null },
     { page: 'search', town: 'kitaibaraki' },
     { page: 'dashboard' },
+    { page: 'mypage' },
     { page: 'partner', town: null, tab: 'post' },
     { page: 'partner', town: 'hitachiomiya', tab: 'report' },
     { page: 'partner', town: 'hitachi', tab: 'reviews' },

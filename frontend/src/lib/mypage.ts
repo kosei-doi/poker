@@ -2,7 +2,7 @@ import { townById } from '../data/towns';
 import type { Spot, StatsIndex, Town, TownId, Voice } from '../types';
 import { findSpot, type PostedSpot } from './partner';
 
-/** ダッシュボード（N3）の一覧を作る純関数 */
+/** マイページ（N3）の一覧を作る純関数 */
 
 export const EXCERPT_MAX = 40;
 
@@ -21,7 +21,7 @@ export interface VisitedTownRow {
   hole: number | null;
 }
 
-export interface DashboardSummary {
+export interface MyPageSummary {
   voices: number;
   towns: number;
   favorites: number;
@@ -83,7 +83,7 @@ export function buildSummary(
   userVoices: Voice[],
   favorites: TownId[],
   postedSpots: PostedSpot[] = [],
-): DashboardSummary {
+): MyPageSummary {
   const mine = buildMyVoices(userVoices, postedSpots);
   return {
     voices: mine.length,

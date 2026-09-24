@@ -1,7 +1,7 @@
-import type { DashboardSummary } from '../../lib/dashboard';
+import type { MyPageSummary } from '../../lib/mypage';
 
 /** まとめの数字（N3-4）。点数・順位・称号は出さない */
-export function SummaryStats({ summary }: { summary: DashboardSummary }) {
+export function SummaryStats({ summary }: { summary: MyPageSummary }) {
   const items = [
     { label: '書いた声', value: summary.voices, unit: '件' },
     { label: '行った町', value: summary.towns, unit: '町' },

@@ -2,6 +2,7 @@ import { Header } from './components/Header';
 import { VoiceModal } from './components/voice/VoiceModal';
 import { AboutPage } from './pages/AboutPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { MyPage } from './pages/MyPage';
 import { PartnerPage } from './pages/PartnerPage';
 import { SearchPage } from './pages/SearchPage';
 import { AppStateProvider } from './state/AppStateProvider';
@@ -29,6 +30,7 @@ function Shell() {
       <Header />
       {route.page === 'search' && <SearchPage />}
       {route.page === 'dashboard' && <DashboardPage />}
+      {route.page === 'mypage' && <MyPage />}
       {route.page === 'partner' && <PartnerPage />}
       {route.page === 'about' && <AboutPage />}
       <VoiceModal />

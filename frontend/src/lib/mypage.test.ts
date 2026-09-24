@@ -3,7 +3,7 @@ import { buildSnapshot } from '../data/seed';
 import { SEED_VOICES } from '../data/voices';
 import { voice } from '../test/fixtures';
 import type { Voice } from '../types';
-import { buildMyVoices, buildSummary, buildVisitedTowns, excerptOf } from './dashboard';
+import { buildMyVoices, buildSummary, buildVisitedTowns, excerptOf } from './mypage';
 
 const at = (min: number) => new Date(Date.UTC(2026, 8, 1) + min * 60000).toISOString();
 const mine = (spotId: string, min: number, opts: Partial<Voice> = {}) =>

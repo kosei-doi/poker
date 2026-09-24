@@ -35,7 +35,7 @@ export function MobileMenu({ id, current, onClose, buttonRef }: Props) {
     <div
       id={id}
       ref={panelRef}
-      className="md:hidden absolute left-0 right-0 top-full z-[1500] bg-panel border-b border-line shadow-2xl fade-in"
+      className="lg:hidden absolute left-0 right-0 top-full z-[1500] bg-panel border-b border-line shadow-2xl fade-in"
     >
       <nav aria-label="ページ">
         <NavLinks current={current} layout="column" onNavigate={() => onClose(false)} firstLinkRef={firstLinkRef} />

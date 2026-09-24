@@ -1,5 +1,5 @@
 import { ChevronRight } from 'lucide-react';
-import type { VisitedTownRow } from '../../lib/dashboard';
+import type { VisitedTownRow } from '../../lib/mypage';
 import { toHash } from '../../lib/route';
 import type { StatsIndex } from '../../types';
 import { ScoreBadge } from '../common/ScoreBadge';

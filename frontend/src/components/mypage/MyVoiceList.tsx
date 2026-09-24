@@ -1,5 +1,5 @@
 import { dateLabel, KNOWN_LABEL } from '../../lib/format';
-import type { MyVoiceRow } from '../../lib/dashboard';
+import type { MyVoiceRow } from '../../lib/mypage';
 import { toHash } from '../../lib/route';
 import { TagChip } from '../common/TagChip';
 

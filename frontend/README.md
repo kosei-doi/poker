@@ -1,75 +1,185 @@
-# React + TypeScript + Vite
+# ポーカー — HACK-STAGE（地方創生 × AI）
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+穴場の町を「1日の過ごし方」ごと提案して、まだ知られていない地域に人を呼ぶ Web アプリ。
 
-Currently, two official plugins are available:
+- **チーム:** ポーカー（リーダー: はやと）
+- **テーマ:** 地方創生 × AI
+- **最終更新:** 2026-09-24（9/23 の MTG までの内容を反映）
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+## 1. 決まったこと
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+| 項目 | 内容 |
+| --- | --- |
+| 誰の | 学生（最初のターゲット。将来は全年代） |
+| 困りごと | 旅行の行き先を決められない。調べても有名どころが上に出てきて、結局そこに行ってしまう |
+| 解決 | イベント単体ではなく**地域単位**で売る。穴場を計算で出し、AI が1日の旅プランを作る |
+| コンセプト | 穴場。**穴場度 = 満足度 − 知名度** |
+| ミッション | 地方創生。住みたい地域で暮らし続けられる選択肢を作る |
+| ビジョン | 旅に特化したプラットフォーム（Instagram・TikTok・食べログのような立ち位置） |
+| やらないこと | 時間がかかりすぎるもの、大きなもの（複雑なシステムなど） |
 
-## Expanding the ESLint configuration
+### 困りごとの中身（9/23 MTG）
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **いつ:** 旅行の計画を立てるとき
+- **つらいこと:**
+  - どこに行けばいいかわからない。どんなことができるのかもわからない
+  - 友達と行くので失敗できない。友達を説得できない
+  - 何を基準に選べばいいかわからない
+  - 優柔不断。計画を立てるのが大変
+  - 情報が足りない、散らばっている
+- **今の対処法:** X（Twitter）・Instagram・Google で調べる。ただ有名どころが上に出るので、結局そこに行く
+- **既存サービスで解決できない理由:** 有名な場所が優先して紹介され、実際に人に来てほしい地域の場所が埋もれてしまう
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### デモで見せる場面
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+旅行には行きたいが、行き先を決められていない学生が、条件（誰と・雰囲気・移動時間・予算）を入れる。穴場の町と、その町で過ごす1日のプランが返ってくる。
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+---
 
+## 2. MVP の範囲
+
+| 作る | 作らない |
+| --- | --- |
+| 条件で絞り込む検索と、穴場のサジェスト | クーポン |
+| マップ上で口コミ（行った人の足跡）を見られる | 予約 |
+| 地域単位の周遊プラン（例: 朝市 → 地元食堂 → クラフト体験） | 共有リスト |
+| 地元の人（農家・商店街・NPO など）が催しを投稿できるフォーム | |
+
+### 穴場の考え方
+
+- 知られていないのに、行った人の満足度が高い場所を穴場とする
+- 人気の場所の中にも、あまり注目されていない場所がある（例: ディズニーの中にも注目されないスポットがある）
+- 編集部が選ぶのではなく、計算で出す
+
+### AI を使う理由（まだ詰めきれていない）
+
+- レコメンド機能を入れたい
+- 目指す形: 普通の言葉で条件を伝えると、交通手段・時間・費用を組み合わせて提案する
+- 使いたいデータ: 地域の人の投稿、実際に行った人の口コミ、イベント情報、施設情報、時刻表
+
+### うまくいったかを測る指標（候補）
+
+- 実際に足を運んだ人の数
+- 地域の満足度が上がったか
+- 穴場が掘り起こされた数
+
+---
+
+## 3. 裏付けになるデータ
+
+### 国内旅行の市場
+
+| 事実 | 出典 |
+| --- | --- |
+| 2024年度に泊まりの国内旅行をした人は 49.3%。どの年代も4〜6割で、最も高いのは18〜29歳の女性（62.7%） | じゃらん観光国内宿泊旅行調査2025 |
+| 2025年の国内旅行は日帰りを含めて延べ約5.5億回。物価高で伸びが鈍く、2026年は減る予測 | 時事通信 |
+| 年に1回も旅行しない人が 46.8% → 50.5% に増えた。旅行する人の平均回数は 2.37回 → 2.86回 に増えた | 日本交通公社 |
+| 20代は旅行する人の割合が増えているが、行ってみたい旅行の種類は減っている | 日本交通公社 |
+| 2025年の訪日外国人は 4,268万人で過去最高 | JNTO |
+
+**分かること:** 旅行しない約半分の人に「旅に出よう」と思わせるのは難しい。狙いやすいのは、何度も旅行している人と訪日客。20代は旅行はしているのに「どこで何をするか」のアイデアが少ないので、穴場を見つける仕組みが刺さる可能性がある。
+
+### 使えそうなオープンデータ
+
+- **熊谷市オープンデータ「観光・特産・名物」:** 観光スポット、桜の名所、雪くま、熊谷うどんなど
+  - CSV はダウンロードできる。ライセンスは CC 表示（クレジット表記が必要。商用でも使える）
+  - API は FIWARE/NGSI 形式: `https://api.kumagaya-datapf.jp/orion/v2/entities?type=TourFacility`
+  - API を使うには利用登録が必要（登録後に利用者キーと秘密鍵が発行される）
+  - 熊谷の公式観光アプリにあるコース・スタンプ・AR 情報が、この API と同じデータかどうかは分からない
+  - まず CSV で取り込み、継続して同期したくなったら API に切り替える
+
+---
+
+## 4. 似ているサービスと既存の事例
+
+| 種類 | 例 | 本プロダクトとの違い |
+| --- | --- | --- |
+| イベント検索・予約 | あそびゅー、いこうよ（家族向け）、ウォーカープラス（祭り・花火）、ぴあ | イベント単体の情報と予約が中心。地域単位ではない |
+| デジタル地域通貨 | chiica、さるぼぼコイン | 地元でお金を回す仕組み。来てもらうきっかけではない |
+| 観光・周遊アプリ | JTB「OTOPa」、iTours | デジタルスタンプラリーなどで回遊させる |
+| 商店街・自治体の共通アプリ | 各自治体 | クーポン・イベント・お知らせの配信 |
+| 地域コミュニティ | ジモティー、PIAZZA | 住民同士のつながりが中心 |
+
+**既存事例がつまずいている点（本プロダクトでも答えが必要）:**
+
+1. **利用者が集まらない:** アプリを入れる動機がない
+2. **続かない:** 補助金が終わると運営も終わる
+
+ご当地アプリには作っても使われないまま終わるものが多い、という論文もある（J-STAGE「観光客向けご当地アプリの現況」）。
+
+**人を集めるきっかけのアイデア（9/23 MTG）:** ゲーム性（エルデンリングの足跡のようなもの）、TikTok で人気ではない場所の紹介が反応が良い、ドライブ、聖地巡礼、インスタ映え。
+
+---
+
+## 5. 審査ポイント
+
+1. 課題設定のリアルさ
+2. インパクト（アイデア）
+3. 実装・設計の完成度
+4. 拡張性
+
+---
+
+## 6. 未決事項・次にやること
+
+- [ ] **AI を使う理由を一言で言えるようにする**（今の実装は AI を使っていない。下の「実装の現状」を参照）
+- [ ] **舞台にする地域を決める:** データは熊谷市が使えるが、デモのデータは長野（明科・四賀・安曇野）になっている
+- [ ] **当事者の声を集める:** 各自1〜2人の学生にヒアリングする（まだ実施していない）
+- [ ] **「利用者が集まらない」「続かない」への答えを用意する**
+- [ ] 地域側（投稿する人）もターゲットにするか決める
+- [ ] 役割分担と締め切りを決める（開発 / ヒアリング・統計調査 / 発表資料・デモ動画）
+
+---
+
+## 7. 実装の現状
+
+### 画面（5タブ）
+
+| タブ | 内容 | ファイル |
+| --- | --- | --- |
+| さがす | 条件（移動時間・予算・誰と・雰囲気）で絞り込み、穴場度が高い順に並べる | `SearchView.tsx` |
+| 催し | 地域の催しの一覧。地元の人の投稿フォームもここから開く | `EventsView.tsx` |
+| 相性で選ぶ | 4つの質問に答えると、合う町を提案する | `MatchView.tsx` |
+| 1日プラン | 選んだ町の1日のタイムライン | `PlanView.tsx` |
+| 行った人 | マップ上で、行った人の記録（足跡）を見る | `TracesView.tsx` |
+
+### 仕組み
+
+- **穴場度:** `src/lib/anaba.ts` の `anabaScore`。満足度 − 知名度 で計算する
+- **1日プラン:** `buildPlan`。**ルールで組んでいて AI は使っていない**（催し → 食 → 撮影 の順、夜の催しは最後、移動は1回30分で計算）
+- **データ:** `src/data/regions.ts` の固定データ（長野の3地域: 明科・四賀・安曇野・穂高）
+- **投稿:** 画面の中にしか保存されず、再読み込みすると消える
+
+### 技術スタック
+
+React 19 / TypeScript / Vite / Tailwind CSS v4 / Leaflet（地図）/ lucide-react（アイコン）
+
+### 起動方法
+
+```bash
+cd frontend
+npm install
+npm run dev     # 開発サーバー
+npm run build   # 型チェックとビルド
+npm run lint
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## 付録: 課題を洗い出した経緯
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+最初はメンバーが感じている地方の問題を挙げ、5つに整理した。
 
-```
+| 課題 | 主な意見 | 結論 |
+| --- | --- | --- |
+| 移動・アクセス | 車がないと大変、公共交通が減っている、病院やお店が遠い | 自分たちで解決するのは難しい |
+| 若者の機会不足 | 若い人が少ない、教育・イベント・ライブが少ない、学校が減っている | 社会の仕組みの問題で大きすぎる |
+| 仕事・まちの活気 | 働く場所がない、駅前に何もない、祭りが縮小している | イベントで人を集めることが活性化につながる |
+| 安全・暮らしやすさ | 夜道が不安、防災無線の行方不明者放送、熱中症 | 切実さは最も強い |
+| 観光のズレ | 観光客が求めるものと地域が出しているものが合っていない | AI と相性が良い |
+
+「イベントで人を集めると活気が出る」と「観光のズレ」をもとに、地域のイベント紹介から出発した。9/23 の MTG で「イベントを紹介するだけで人は集まるのか」という問いが出て、**イベントではなく地域単位で売る**方向に変えた。
+
+地方の良いところとして挙がった点: 人が少なくて穏やか、周りの目を気にしなくていい、自然が豊か、空気が綺麗、物価が安い、ご飯が美味しい、広い。
